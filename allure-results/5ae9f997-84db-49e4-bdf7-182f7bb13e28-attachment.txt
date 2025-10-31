@@ -1,0 +1,48 @@
+[33mWARNING [0m pages.home_page:home_page.py:307 ⚠️  Locator específico falló: Message: 
+Stacktrace:
+Symbols not available. Dumping unresolved backtrace:
+	0x7ff678a17a35
+	0x7ff678a17a90
+	0x7ff6787916ad
+	0x7ff6787ea13e
+	0x7ff6787ea44c
+	0x7ff67883ebe7
+	0x7ff67883b8fb
+	0x7ff6787db068
+	0x7ff6787dbe93
+	0x7ff678cd29d0
+	0x7ff678ccce50
+	0x7ff678cecc45
+	0x7ff678a330ce
+	0x7ff678a3adbf
+	0x7ff678a20c14
+	0x7ff678a20dcf
+	0x7ff678a06828
+	0x7ffed862e8d7
+	0x7ffed9e2c53c
+. Intentando alternativo...
+[1m[31mERROR   [0m pages.home_page:home_page.py:321 ❌ Error navegando a Ofertas y destinos: Message: 
+Stacktrace:
+Symbols not available. Dumping unresolved backtrace:
+	0x7ff678a17a35
+	0x7ff678a17a90
+	0x7ff6787916ad
+	0x7ff6787ea13e
+	0x7ff6787ea44c
+	0x7ff67883ebe7
+	0x7ff67883b8fb
+	0x7ff6787db068
+	0x7ff6787dbe93
+	0x7ff678cd29d0
+	0x7ff678ccce50
+	0x7ff678cecc45
+	0x7ff678a330ce
+	0x7ff678a3adbf
+	0x7ff678a20c14
+	0x7ff678a20dcf
+	0x7ff678a06828
+	0x7ffed862e8d7
+	0x7ffed9e2c53c
+
+[1m[31mERROR   [0m test_case_6:test_case_6.py:133 ❌ Test 6.1 FALLÓ: ❌ Falló la navegación a Ofertas y destinos
+assert False - https://nuxqa5.avtest.ink/

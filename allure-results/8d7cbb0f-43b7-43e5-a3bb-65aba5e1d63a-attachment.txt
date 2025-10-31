@@ -1,0 +1,1 @@
+[1m[31mERROR   [0m test_case_5:test_case_5.py:88 Error en test_change_pos para España: 'HomePage' object has no attribute 'navigate_to'
