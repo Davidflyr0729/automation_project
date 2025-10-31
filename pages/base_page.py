@@ -134,3 +134,16 @@ class BasePage:
         except Exception as e:
             print(f"❌ Error obteniendo información de página: {e}")
             return {'url': self.driver.current_url, 'title': self.driver.title}
+    
+    def wait_for_element(self, locator, timeout=10):
+        from selenium.webdriver.support.ui import WebDriverWait
+        from selenium.webdriver.support import expected_conditions as EC
+        
+        try:
+            element = WebDriverWait(self.driver, timeout).until(
+                EC.visibility_of_element_located(locator)
+            )
+            return element
+        except Exception as e:
+            print(f"❌ Elemento no encontrado: {locator} - {e}")
+            return None

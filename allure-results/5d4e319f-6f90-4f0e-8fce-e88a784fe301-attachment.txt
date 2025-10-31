@@ -1,0 +1,18 @@
+🎥 VIDEOS GENERADOS:
+==================================================
+1. nuxqa4_english_chrome_20251030_194839.mp4
+   Tamaño: 74.7 KB
+2. nuxqa4_francais_chrome_20251030_194845.mp4
+   Tamaño: 213.2 KB
+3. nuxqa4_portugues_chrome_20251030_194851.mp4
+   Tamaño: 254.2 KB
+4. nuxqa4_español_chrome_20251030_194857.mp4
+   Tamaño: 204.1 KB
+5. nuxqa5_english_chrome_20251030_194904.mp4
+   Tamaño: 15.6 KB
+6. nuxqa5_francais_chrome_20251030_194911.mp4
+   Tamaño: 89.6 KB
+7. nuxqa5_portugues_chrome_20251030_194917.mp4
+   Tamaño: 98.6 KB
+8. nuxqa5_español_chrome_20251030_194923.mp4
+   Tamaño: 244.4 KB

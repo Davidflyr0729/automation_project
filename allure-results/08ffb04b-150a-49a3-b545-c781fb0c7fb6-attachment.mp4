@@ -1,0 +1,28 @@
+VIDEO RECORDING INFORMATION
+==================================================
+Test Name: test_change_all_languages_both_urls
+Browser: chrome
+Start Time: 2025-10-30 19:30:22
+Total Frames Captured: 18
+Frame Sequence:
+  Frame 1: videos/test_change_all_languages_both_urls_chrome_20251030_192921_frame_192925_962.png
+  Frame 2: videos/test_change_all_languages_both_urls_chrome_20251030_192921_frame_192926_153.png
+  Frame 3: videos/test_change_all_languages_both_urls_chrome_20251030_192921_frame_192932_252.png
+  Frame 4: videos/test_change_all_languages_both_urls_chrome_20251030_192921_frame_192933_556.png
+  Frame 5: videos/test_change_all_languages_both_urls_chrome_20251030_192921_frame_192937_804.png
+  Frame 6: videos/test_change_all_languages_both_urls_chrome_20251030_192921_frame_192939_003.png
+  Frame 7: videos/test_change_all_languages_both_urls_chrome_20251030_192921_frame_192945_014.png
+  Frame 8: videos/test_change_all_languages_both_urls_chrome_20251030_192921_frame_192946_153.png
+  Frame 9: videos/test_change_all_languages_both_urls_chrome_20251030_192921_frame_192950_011.png
+  Frame 10: videos/test_change_all_languages_both_urls_chrome_20251030_192921_frame_192955_487.png
+  Frame 11: videos/test_change_all_languages_both_urls_chrome_20251030_192921_frame_192955_685.png
+  Frame 12: videos/test_change_all_languages_both_urls_chrome_20251030_192921_frame_193001_625.png
+  Frame 13: videos/test_change_all_languages_both_urls_chrome_20251030_192921_frame_193002_586.png
+  Frame 14: videos/test_change_all_languages_both_urls_chrome_20251030_192921_frame_193009_363.png
+  Frame 15: videos/test_change_all_languages_both_urls_chrome_20251030_192921_frame_193010_462.png
+  Frame 16: videos/test_change_all_languages_both_urls_chrome_20251030_192921_frame_193016_502.png
+  Frame 17: videos/test_change_all_languages_both_urls_chrome_20251030_192921_frame_193017_529.png
+  Frame 18: videos/test_change_all_languages_both_urls_chrome_20251030_192921_frame_193021_627.png
+
+NOTA: Este es un 'video' compuesto por screenshots secuenciales.
+Cada frame representa un paso en la ejecución de la prueba.

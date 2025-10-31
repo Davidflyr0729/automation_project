@@ -15,6 +15,14 @@ class LanguagePage(BasePage):
         'portugues': ('Português', 'pt')
     }
     
+    # Textos característicos por idioma para validación de contenido
+    LANGUAGE_TEXTS = {
+        'español': 'Ofertas',      # Texto en español
+        'english': 'Book',      # Texto en inglés  
+        'francais': 'Vols',        # Texto en francés
+        'portugues': 'Voos'        # Texto en portugués
+    }
+    
     def __init__(self, driver):
         super().__init__(driver)
     
@@ -38,6 +46,15 @@ class LanguagePage(BasePage):
         """Seleccionar un idioma específico"""
         print(f"🔄 Cambiando a idioma: {language_name}")
         
+        # ✅ CORREGIDO: Obtener la URL base actual dinámicamente
+        current_url = self.driver.current_url
+        if "nuxqa4" in current_url:
+            base_domain = "nuxqa4.avtest.ink"
+        elif "nuxqa5" in current_url:
+            base_domain = "nuxqa5.avtest.ink"
+        else:
+            base_domain = "nuxqa4.avtest.ink"  # Por defecto
+        
         # Abrir el menú
         self.open_language_menu()
         
@@ -57,21 +74,59 @@ class LanguagePage(BasePage):
         # Hacer click en la opción
         self.click_element(language_option)
         
-        # Esperar a que la URL cambie
-        expected_url = f"https://nuxqa4.avtest.ink/{url_code}/"
+        # ✅ CORREGIDO: Usar la URL base dinámica
+        expected_url = f"https://{base_domain}/{url_code}/"
         self.wait_for_url(expected_url)
         
         return url_code
     
+    def validate_language_content(self, language_name):
+        """
+        Valida que el contenido de la página esté en el idioma correcto
+        buscando textos específicos de cada idioma
+        """
+        expected_text = self.LANGUAGE_TEXTS.get(language_name.lower())
+        if not expected_text:
+            raise ValueError(f"No hay texto de validación para: {language_name}")
+        
+        print(f"🔍 Validando texto '{expected_text}' para idioma {language_name}")
+        
+        try:
+            # Buscar el texto en cualquier parte de la página
+            element = self.wait_for_element(
+                (By.XPATH, f"//*[contains(text(), '{expected_text}')]"),
+                timeout=10
+            )
+            
+            if element:
+                print(f"✅ Validación EXITOSA: texto '{expected_text}' encontrado")
+                return True
+            else:
+                print(f"❌ Validación FALLIDA: texto '{expected_text}' NO encontrado")
+                return False
+                
+        except Exception as e:
+            print(f"❌ Error en validación de contenido: {e}")
+            return False
+    
     def get_current_language(self):
-        """Obtener el idioma actual basado en la URL"""
+        """Obtener el idioma actual basado en URL Y contenido"""
         current_url = self.driver.current_url
         
+        # Primero verificar por URL (como lo haces actualmente)
         if '/en/' in current_url:
-            return 'english'
+            url_lang = 'english'
         elif '/fr/' in current_url:
-            return 'francais' 
+            url_lang = 'francais' 
         elif '/pt/' in current_url:
-            return 'portugues'
+            url_lang = 'portugues'
         else:
-            return 'español'
+            url_lang = 'español'
+        
+        # Luego validar que el contenido coincide
+        content_valid = self.validate_language_content(url_lang)
+        
+        if not content_valid:
+            print(f"⚠️  ADVERTENCIA: URL dice '{url_lang}' pero el contenido no coincide")
+        
+        return url_lang
