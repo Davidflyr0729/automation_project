@@ -1,0 +1,1 @@
+[31m[1mERROR   [0m test_case_6:test_case_6.py:212 ❌ Test FALLÓ: Message:

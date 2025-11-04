@@ -1,0 +1,3 @@
+[1m[31mERROR   [0m pages.home_page:home_page.py:494 ❌ No se encontró enlace de tarifas
+[1m[31mERROR   [0m test_case_6:test_case_6.py:371 ❌ Test 6.3 FALLÓ: ❌ Falló la navegación a Información y ayuda
+assert False - https://nuxqa5.avtest.ink/

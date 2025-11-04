@@ -1,0 +1,165 @@
+1. Text: 'No text'
+   Href: https://nuxqa4.avtest.ink/es/
+   Visible: True, Enabled: True
+   Selector: //header//a
+
+2. Text: 'No text'
+   Href: https://nuxqa4.avtest.ink/es/ofertas-destinos/ofertas-de-vuelos/
+   Visible: False, Enabled: True
+   Selector: //header//a
+
+3. Text: 'No text'
+   Href: https://nuxqa4.avtest.ink/es/ofertas-destinos/destinos/
+   Visible: False, Enabled: True
+   Selector: //header//a
+
+4. Text: 'No text'
+   Href: https://nuxqa4.avtest.ink/es/ofertas-destinos/nuevas-rutas/
+   Visible: False, Enabled: True
+   Selector: //header//a
+
+5. Text: 'No text'
+   Href: https://nuxqa4.avtest.ink/es/ofertas-destinos/reservas-de-grupos/
+   Visible: False, Enabled: True
+   Selector: //header//a
+
+6. Text: 'No text'
+   Href: https://sp.booking.com/dealspage.html?aid=2434507&label=hotels_navtab
+   Visible: False, Enabled: True
+   Selector: //header//a
+
+7. Text: 'No text'
+   Href: https://www.rentalcars.com/?affiliateCode=avianca695&adplat=cardlandingpage
+   Visible: False, Enabled: True
+   Selector: //header//a
+
+8. Text: 'No text'
+   Href: https://avianca.civitatis.com/es/
+   Visible: False, Enabled: True
+   Selector: //header//a
+
+9. Text: 'No text'
+   Href: https://cambiatuitinerario.avianca.com/ATC/flightSearch?lan=es&pais=co
+   Visible: False, Enabled: True
+   Selector: //header//a
+
+10. Text: 'No text'
+   Href: https://nuxqa4.avtest.ink/es/tu-reserva/personaliza-tu-viaje/
+   Visible: False, Enabled: True
+   Selector: //header//a
+
+11. Text: 'No text'
+   Href: https://nuxqa4.avtest.ink/es/tu-reserva/check-in-online/
+   Visible: False, Enabled: True
+   Selector: //header//a
+
+12. Text: 'No text'
+   Href: https://nuxqa4.avtest.ink/es/tu-reserva/business-class/
+   Visible: False, Enabled: True
+   Selector: //header//a
+
+13. Text: 'No text'
+   Href: https://nuxqa4.avtest.ink/es/tu-reserva/cambios-y-reembolsos/?currencyCode=COP
+   Visible: False, Enabled: True
+   Selector: //header//a
+
+14. Text: 'No text'
+   Href: https://nuxqa4.avtest.ink/es/tu-reserva/cambios-y-reembolsos/avianca-credits/
+   Visible: False, Enabled: True
+   Selector: //header//a
+
+15. Text: 'No text'
+   Href: https://informacionvuelo.avianca.com/es/estado-de-vuelo
+   Visible: False, Enabled: True
+   Selector: //header//a
+
+16. Text: 'No text'
+   Href: https://ayuda.avianca.com/hc/es/articles/13523002282651
+   Visible: False, Enabled: True
+   Selector: //header//a
+
+17. Text: 'No text'
+   Href: https://nuxqa4.avtest.ink/es/informacion-y-ayuda/tarifas-avianca/
+   Visible: False, Enabled: True
+   Selector: //header//a
+
+18. Text: 'No text'
+   Href: https://nuxqa4.avtest.ink/es/informacion-y-ayuda/equipaje/
+   Visible: False, Enabled: True
+   Selector: //header//a
+
+19. Text: 'No text'
+   Href: https://nuxqa4.avtest.ink/es/informacion-y-ayuda/experiencia-avianca/
+   Visible: False, Enabled: True
+   Selector: //header//a
+
+20. Text: 'No text'
+   Href: https://ayuda.avianca.com/hc/es/
+   Visible: False, Enabled: True
+   Selector: //header//a
+
+21. Text: 'No text'
+   Href: https://nuxqa4.avtest.ink/es/informacion-y-ayuda/requisitos-para-viajar/
+   Visible: False, Enabled: True
+   Selector: //header//a
+
+22. Text: 'No text'
+   Href: https://nuxqa4.avtest.ink/es/informacion-y-ayuda/asistencia-especial/
+   Visible: False, Enabled: True
+   Selector: //header//a
+
+23. Text: 'No text'
+   Href: https://nuxqa4.avtest.ink/es/informacion-y-ayuda/volar-con-ninos-y-bebes/
+   Visible: False, Enabled: True
+   Selector: //header//a
+
+24. Text: 'No text'
+   Href: https://nuxqa4.avtest.ink/es/informacion-y-ayuda/mascotas-a-bordo/
+   Visible: False, Enabled: True
+   Selector: //header//a
+
+25. Text: 'No text'
+   Href: https://nuxqa4.avtest.ink/es/lifemiles-info/programa-lifemiles/
+   Visible: False, Enabled: True
+   Selector: //header//a
+
+26. Text: 'No text'
+   Href: https://nuxqa4.avtest.ink/es/lifemiles/millas-pendientes/
+   Visible: False, Enabled: True
+   Selector: //header//a
+
+27. Text: 'No text'
+   Href: https://www.lifemiles.com/landing/clublm?utm_source=avianca&utm_medium=referral&utm_campaign=menu_%20lifemiles
+   Visible: False, Enabled: True
+   Selector: //header//a
+
+28. Text: 'No text'
+   Href: https://www.lifemiles.com/landing/partners/airline/AV-earn?utm_source=avianca&utm_medium=referral&utm_campaign=menu_%20lifemiles
+   Visible: False, Enabled: True
+   Selector: //header//a
+
+29. Text: 'No text'
+   Href: https://www.lifemiles.com/credit-card/get-credit-card?utm_source=avianca&utm_medium=referral&utm_campaign=menu_%20lifemiles
+   Visible: False, Enabled: True
+   Selector: //header//a
+
+30. Text: 'No text'
+   Href: https://www.lifemiles.com/fly/find?utm_source=avianca&utm_medium=referral&utm_campaign=menu_%20lifemiles
+   Visible: False, Enabled: True
+   Selector: //header//a
+
+31. Text: 'No text'
+   Href: https://flight-deals.lifemiles.com/es/?utm_source=avianca&utm_medium=referral&utm_campaign=menu_%20lifemiles
+   Visible: False, Enabled: True
+   Selector: //header//a
+
+32. Text: 'No text'
+   Href: https://www.lifemiles.com/donate-miles?utm_source=avianca&utm_medium=menu&utm_campaign=menu_lifemiles
+   Visible: False, Enabled: True
+   Selector: //header//a
+
+33. Text: 'Descubrir más ofertas'
+   Href: https://nuxqa4.avtest.ink/es/ofertas-y-promociones/ofertas-de-vuelos/
+   Visible: True, Enabled: True
+   Selector: //a[contains(@href, 'ofertas') or contains(@href, 'offers')]
+

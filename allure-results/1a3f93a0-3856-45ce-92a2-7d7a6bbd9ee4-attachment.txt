@@ -1,0 +1,3 @@
+[1m[31mERROR   [0m pages.home_page:home_page.py:455 ❌ No se encontró enlace de check-in
+[1m[31mERROR   [0m test_case_6:test_case_6.py:263 ❌ Test 6.2 FALLÓ: ❌ Falló la navegación a Tu reserva check-in
+assert False - https://nuxqa4.avtest.ink/

@@ -1,0 +1,1 @@
+[1m[31mERROR   [0m test_case_6:test_case_6.py:258 ❌ TEST 6.1 FALLÓ: No se pudo encontrar 'Ofertas de vuelos' en el submenú

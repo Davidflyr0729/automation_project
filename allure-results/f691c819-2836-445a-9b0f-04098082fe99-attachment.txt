@@ -1,0 +1,25 @@
+[1m[31mERROR   [0m pages.home_page:home_page.py:271 ❌ Error en navegación: Message: 
+Stacktrace:
+Symbols not available. Dumping unresolved backtrace:
+	0x7ff7f9817a35
+	0x7ff7f9817a90
+	0x7ff7f95916ad
+	0x7ff7f95ea13e
+	0x7ff7f95ea44c
+	0x7ff7f963ebe7
+	0x7ff7f963b8fb
+	0x7ff7f95db068
+	0x7ff7f95dbe93
+	0x7ff7f9ad29d0
+	0x7ff7f9acce50
+	0x7ff7f9aecc45
+	0x7ff7f98330ce
+	0x7ff7f983adbf
+	0x7ff7f9820c14
+	0x7ff7f9820dcf
+	0x7ff7f9806828
+	0x7ffed862e8d7
+	0x7ffed9e2c53c
+
+[1m[31mERROR   [0m test_case_6:test_case_6.py:472 ❌ Test 6.1 FALLÓ: ❌ Falló la navegación a Ofertas y destinos
+assert False - https://nuxqa5.avtest.ink/

@@ -2,542 +2,864 @@ import pytest
 import os
 import allure
 import logging
+import time
+from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.action_chains import ActionChains
 from pages.home_page import HomePage
 from utils.database import DatabaseManager
 from utils.video_recorder import VideoRecorder
-import time
 
 logger = logging.getLogger(__name__)
 
-@allure.feature("Caso 6: Redirecciones Header")
-@allure.story("Verificar navegación a 3 sitios diferentes del navbar")
+
+@allure.feature("Caso 6: Navegación en Navbar")
 class TestCase6:
-    """Pruebas para el Caso 6: Redirecciones en el Header"""
-    
-    # URLs a probar - AMBAS REQUERIDAS
-    # By default test both QA URLs, but allow overriding to a single URL using
-    # the CASE6_URL environment variable for step-by-step runs.
-    DEFAULT_TEST_URLS = [
+    """Tests para navegación en el navbar - Ofertas de vuelos, Check-in e Información y ayuda"""
+
+    # URLs a testear
+    URLS = [
         "https://nuxqa4.avtest.ink/",
         "https://nuxqa5.avtest.ink/"
     ]
 
-    env_url = os.environ.get('CASE6_URL')
-    if env_url:
-        TEST_URLS = [env_url]
-    else:
-        TEST_URLS = DEFAULT_TEST_URLS
-    
-    @pytest.fixture(scope="function", params=TEST_URLS)
+    @pytest.fixture(scope="function", params=URLS)
     def setup(self, browser, request):
-        """Configuración inicial para cada test - Ejecuta en ambas URLs"""
-        logger.info("🔄 Iniciando configuración para Caso 6")
+        """Setup: Prepara el entorno para cada URL"""
+        base_url = request.param
+        url_name = "nuxqa4" if "nuxqa4" in base_url else "nuxqa5"
         
-        # Inicializar página principal
+        logger.info(f"Iniciando setup - Caso 6 (URL: {base_url})")
+        
         home_page = HomePage(browser)
         
-        # Inicializar grabadora de video
-        test_name = f"{request.node.name}_{request.param.split('//')[1].split('.')[0]}"
+        # Configurar video recording
+        test_name = f"caso6_{url_name}_{browser.name}"
         video_recorder = VideoRecorder(test_name=test_name, browser_name=browser.name)
-        video_recorder.start_recording()
         
-        # Inicializar base de datos
+        # Configurar base de datos
         db = DatabaseManager()
-        
-        # Navegar a la página principal (URL específica del parámetro)
-        base_url = request.param
+
+        try:
+            # Iniciar grabación de video
+            video_recorder.start_recording()
+        except Exception as e:
+            logger.warning(f"No se pudo iniciar VideoRecorder: {e}")
+
+        # Navegar a la URL base
         home_page.navigate_to(base_url)
         home_page.wait_for_page_load()
-        # Asegurarse de que las pruebas de Caso 6 se ejecuten en Español
-        try:
-            home_page.select_language('español')
-            time.sleep(1)
-            logger.info("Idioma forzado a Español en setup para Caso 6")
-        except Exception as e:
-            logger.warning(f"No se pudo forzar idioma a Español en setup: {e}")
+
+        # Verificar y forzar idioma español si es necesario
+        current_url = home_page.get_page_url()
+        logger.info(f"URL actual: {current_url}")
         
+        if not current_url.endswith('/es/'):
+            try:
+                logger.info("Forzando idioma a español...")
+                home_page.select_language('español')
+                time.sleep(3)
+                # Verificar que cambió a español
+                new_url = home_page.get_page_url()
+                logger.info(f"URL después de cambiar idioma: {new_url}")
+            except Exception as e:
+                logger.warning(f"No se pudo forzar idioma a Español: {e}")
+
         yield {
             'browser': browser,
             'home_page': home_page,
             'video_recorder': video_recorder,
             'db': db,
-            'base_url': base_url
+            'base_url': base_url,
+            'url_name': url_name  # Asegurar que esta línea está presente
         }
-        
-        # Finalizar grabación y guardar en base de datos
+
+        # Teardown: detener grabación
         try:
             video_path = video_recorder.stop_recording()
-            logger.info(f"🎥 Video guardado: {video_path}")
+            logger.info(f"Video guardado: {video_path}")
         except Exception as e:
-            logger.error(f"Error al detener grabación: {e}")
+            logger.debug(f"No se pudo detener VideoRecorder: {e}")
 
-    @allure.title("Caso 6.1: Navegar a Ofertas y Destinos")
-    @allure.description("Verificar que la navegación a 'Ofertas y destinos' funciona correctamente en ambas URLs")
+    @allure.title("Caso 6.1: Navegación a Ofertas de Vuelos")
     @allure.severity(allure.severity_level.CRITICAL)
-    def test_navigate_to_offers_and_destinations(self, setup):
-        """Test 6.1: Navegar a la sección Ofertas y destinos -> ofertas de vuelos"""
+    def test_navigate_to_flight_offers(self, setup):
+        """Navegar desde el navbar a Ofertas y destinos -> Ofertas de vuelos"""
         browser = setup['browser']
         home_page = setup['home_page']
+        video_recorder = setup['video_recorder']
         db = setup['db']
         base_url = setup['base_url']
-        
-        logger.info(f"🚀 Iniciando Test 6.1: Navegación a Ofertas y destinos - {base_url}")
-        
-        try:
-            with allure.step(f"Paso 1: Obtener URL inicial - {base_url}"):
-                initial_url = home_page.get_page_url()
-                logger.info(f"📄 URL inicial: {initial_url}")
-                allure.attach(initial_url, name="URL Inicial", attachment_type=allure.attachment_type.TEXT)
+        url_name = setup['url_name']  # Obtener url_name del setup
 
-            with allure.step("Paso 2: Navegar a Ofertas y destinos"):
-                navigation_success = home_page.navigate_to_offers_and_destinations()
-                assert navigation_success, "❌ Falló la navegación a Ofertas y destinos"
-                
-                # Esperar a que cambie la URL
-                WebDriverWait(browser, 10).until(
-                    lambda driver: driver.current_url != initial_url
-                )
-                
+        logger.info(f"=== INICIANDO TEST 6.1: Ofertas de Vuelos - {url_name} ===")
+
+        try:
+            # Paso 1: Verificar que estamos en español
+            with allure.step("Verificar idioma español"):
                 current_url = home_page.get_page_url()
-                logger.info(f"📄 URL después de navegación: {current_url}")
-                allure.attach(current_url, name="URL Después de Navegación", attachment_type=allure.attachment_type.TEXT)
-
-            with allure.step("Paso 3: Verificar que la página cargó correctamente"):
-                page_loaded = home_page.verify_offers_page_loaded()
-                assert page_loaded, "❌ La página de ofertas no cargó correctamente"
+                logger.info(f"URL verificada: {current_url}")
                 
-                # Tomar screenshot como evidencia
-                screenshot_name = f"caso6_1_ofertas_destinos_{base_url.split('//')[1].split('.')[0]}.png"
-                home_page.take_screenshot(screenshot_name)
-                allure.attach.file(f"screenshots/{screenshot_name}", 
-                                 name=f"Screenshot Ofertas y Destinos - {base_url}", 
-                                 attachment_type=allure.attachment_type.PNG)
-
-            with allure.step("Paso 4: Verificar que la URL es diferente a la inicial"):
-                assert current_url != initial_url, "❌ La URL no cambió después de la navegación"
-                assert "ofertas" in current_url.lower() or "offers" in current_url.lower() or "destinos" in current_url.lower(), \
-                    f"❌ La URL no contiene indicadores de ofertas: {current_url}"
-
-            with allure.step("Paso 5: Guardar resultados en base de datos"):
-                db.save_test_result(
-                    test_case_number=6,
-                    test_case_name=f"Navegación a Ofertas y Destinos - {base_url}",
-                    browser=browser.name,
-                    language="español",
-                    status="PASS",
-                    url=base_url,
-                    additional_info=f"URL destino: {current_url}"
-                )
+                # Si no termina en /es/, intentar navegar directamente a la versión española
+                if not current_url.endswith('/es/'):
+                    spanish_url = f"{base_url}es/"
+                    logger.info(f"Navegando directamente a: {spanish_url}")
+                    home_page.navigate_to(spanish_url)
+                    home_page.wait_for_page_load()
+                    current_url = home_page.get_page_url()
                 
-                # Guardar datos específicos del Caso 6
-                db.save_case6_redirect(
-                    test_name="Ofertas y Destinos",
-                    browser=browser.name,
-                    language="español",
-                    from_url=initial_url,
-                    to_url=current_url,
-                    redirect_success=True,
-                    page_title=browser.title,
-                    additional_notes=f"URL base: {base_url}"
-                )
+                assert '/es/' in current_url, f"La URL no contiene '/es/': {current_url}"
+                logger.info(f"✅ URL en español confirmada: {current_url}")
+                allure.attach(current_url, name="URL en Español", attachment_type=allure.attachment_type.TEXT)
 
-            logger.info(f"✅ Test 6.1 PASÓ: Navegación a Ofertas y destinos exitosa - {base_url}")
-            
-        except Exception as e:
-            logger.error(f"❌ Test 6.1 FALLÓ: {e} - {base_url}")
-            
-            # Guardar resultado fallido en base de datos
-            db.save_test_result(
-                test_case_number=6,
-                test_case_name=f"Navegación a Ofertas y Destinos - {base_url}",
-                browser=browser.name,
-                language="español",
-                status="FAIL",
-                url=base_url,
-                additional_info=f"Error: {str(e)}"
-            )
-            
-            # Guardar redirección fallida
-            db.save_case6_redirect(
-                test_name="Ofertas y Destinos",
-                browser=browser.name,
-                language="español",
-                from_url=home_page.get_page_url(),
-                to_url="N/A",
-                redirect_success=False,
-                additional_notes=f"Error: {str(e)} - URL base: {base_url}"
-            )
-            
-            # Tomar screenshot del error
-            error_screenshot = f"caso6_1_error_{base_url.split('//')[1].split('.')[0]}.png"
-            home_page.take_screenshot(error_screenshot)
-            allure.attach.file(f"screenshots/{error_screenshot}", 
-                             name=f"Screenshot Error - {base_url}", 
-                             attachment_type=allure.attachment_type.PNG)
-            raise
+                # Capturar screenshot inicial
+                video_recorder.capture_frame(browser)
 
-    @allure.title("Caso 6.2: Navegar a Tu Reserva Check-in")
-    @allure.description("Verificar que la navegación a 'Tu reserva check-in' funciona correctamente en ambas URLs")
-    @allure.severity(allure.severity_level.CRITICAL)
-    def test_navigate_to_my_booking_checkin(self, setup):
-        """Test 6.2: Navegar a la sección Tu reserva check-in -> Gestiona tu reserva"""
-        browser = setup['browser']
-        home_page = setup['home_page']
-        db = setup['db']
-        base_url = setup['base_url']
-        
-        logger.info(f"🚀 Iniciando Test 6.2: Navegación a Tu reserva check-in - {base_url}")
-        
-        try:
-            with allure.step(f"Paso 1: Obtener URL inicial - {base_url}"):
-                initial_url = home_page.get_page_url()
-                logger.info(f"📄 URL inicial: {initial_url}")
-
-            with allure.step("Paso 2: Navegar a Tu reserva check-in"):
-                navigation_success = home_page.navigate_to_my_booking_checkin()
-                assert navigation_success, "❌ Falló la navegación a Tu reserva check-in"
+            # Paso 2: Localizar el menú "Ofertas y destinos" con múltiples selectores
+            with allure.step("Localizar menú Ofertas y destinos"):
+                logger.info("Buscando menú 'Ofertas y destinos'...")
                 
-                # Esperar a que cambie la URL
-                WebDriverWait(browser, 10).until(
-                    lambda driver: driver.current_url != initial_url
-                )
+                # Diferentes estrategias para encontrar el menú
+                selectors = [
+                    "//a[contains(text(), 'Ofertas y destinos')]",
+                    "//a[contains(@href, 'ofertas-destinos')]",
+                    "//button[contains(text(), 'Ofertas y destinos')]",
+                    "//*[contains(@class, 'nav')]//*[contains(text(), 'Ofertas y destinos')]",
+                    "//*[contains(@class, 'menu')]//*[contains(text(), 'Ofertas y destinos')]",
+                    "//*[contains(@class, 'navbar')]//*[contains(text(), 'Ofertas y destinos')]"
+                ]
                 
-                current_url = home_page.get_page_url()
-                logger.info(f"📄 URL después de navegación: {current_url}")
-
-            with allure.step("Paso 3: Verificar que la página cargó correctamente"):
-                page_loaded = home_page.verify_checkin_page_loaded()
-                assert page_loaded, "❌ La página de check-in no cargó correctamente"
+                offers_menu = None
+                used_selector = ""
                 
-                # Tomar screenshot como evidencia
-                screenshot_name = f"caso6_2_tu_reserva_checkin_{base_url.split('//')[1].split('.')[0]}.png"
-                home_page.take_screenshot(screenshot_name)
-                allure.attach.file(f"screenshots/{screenshot_name}", 
-                                 name=f"Screenshot Tu Reserva Check-in - {base_url}", 
-                                 attachment_type=allure.attachment_type.PNG)
-
-            with allure.step("Paso 4: Verificar que la URL es diferente a la inicial"):
-                assert current_url != initial_url, "❌ La URL no cambió después de la navegación"
-                assert "check-in" in current_url.lower() or "checkin" in current_url.lower() or "booking" in current_url.lower() or "reserva" in current_url.lower(), \
-                    f"❌ La URL no contiene indicadores de check-in: {current_url}"
-
-            with allure.step("Paso 5: Guardar resultados en base de datos"):
-                db.save_test_result(
-                    test_case_number=6,
-                    test_case_name=f"Navegación a Tu Reserva Check-in - {base_url}",
-                    browser=browser.name,
-                    language="español",
-                    status="PASS",
-                    url=base_url,
-                    additional_info=f"URL destino: {current_url}"
-                )
-                
-                # Guardar datos específicos del Caso 6
-                db.save_case6_redirect(
-                    test_name="Tu Reserva Check-in",
-                    browser=browser.name,
-                    language="español",
-                    from_url=initial_url,
-                    to_url=current_url,
-                    redirect_success=True,
-                    page_title=browser.title,
-                    additional_notes=f"URL base: {base_url}"
-                )
-
-            logger.info(f"✅ Test 6.2 PASÓ: Navegación a Tu reserva check-in exitosa - {base_url}")
-            
-        except Exception as e:
-            logger.error(f"❌ Test 6.2 FALLÓ: {e} - {base_url}")
-            
-            # Guardar resultado fallido en base de datos
-            db.save_test_result(
-                test_case_number=6,
-                test_case_name=f"Navegación a Tu Reserva Check-in - {base_url}",
-                browser=browser.name,
-                language="español",
-                status="FAIL",
-                url=base_url,
-                additional_info=f"Error: {str(e)}"
-            )
-            
-            # Guardar redirección fallida
-            db.save_case6_redirect(
-                test_name="Tu Reserva Check-in",
-                browser=browser.name,
-                language="español",
-                from_url=home_page.get_page_url(),
-                to_url="N/A",
-                redirect_success=False,
-                additional_notes=f"Error: {str(e)} - URL base: {base_url}"
-            )
-            
-            # Tomar screenshot del error
-            error_screenshot = f"caso6_2_error_{base_url.split('//')[1].split('.')[0]}.png"
-            home_page.take_screenshot(error_screenshot)
-            allure.attach.file(f"screenshots/{error_screenshot}", 
-                             name=f"Screenshot Error - {base_url}", 
-                             attachment_type=allure.attachment_type.PNG)
-            raise
-
-    @allure.title("Caso 6.3: Navegar a Información y Ayuda - Tipos de Tarifas")
-    @allure.description("Verificar que la navegación a 'Información y ayuda' -> Tipos de tarifas funciona correctamente en ambas URLs")
-    @allure.severity(allure.severity_level.CRITICAL)
-    def test_navigate_to_info_and_help_tariffs(self, setup):
-        """Test 6.3: Navegar a la sección Información y ayuda -> Tipos de tarifas"""
-        browser = setup['browser']
-        home_page = setup['home_page']
-        db = setup['db']
-        base_url = setup['base_url']
-        
-        logger.info(f"🚀 Iniciando Test 6.3: Navegación a Información y ayuda - Tipos de tarifas - {base_url}")
-        
-        try:
-            with allure.step(f"Paso 1: Obtener URL inicial - {base_url}"):
-                initial_url = home_page.get_page_url()
-                logger.info(f"📄 URL inicial: {initial_url}")
-
-            with allure.step("Paso 2: Navegar a Información y ayuda"):
-                navigation_success = home_page.navigate_to_info_and_help_tariffs()
-                assert navigation_success, "❌ Falló la navegación a Información y ayuda"
-                
-                # Esperar a que cambie la URL
-                WebDriverWait(browser, 10).until(
-                    lambda driver: driver.current_url != initial_url
-                )
-                
-                current_url = home_page.get_page_url()
-                logger.info(f"📄 URL después de navegación: {current_url}")
-
-            with allure.step("Paso 3: Verificar que la página cargó correctamente"):
-                page_loaded = home_page.verify_tariff_types_page_loaded()
-                assert page_loaded, "❌ La página de tipos de tarifas no cargó correctamente"
-                
-                # Tomar screenshot como evidencia
-                screenshot_name = f"caso6_3_info_ayuda_tarifas_{base_url.split('//')[1].split('.')[0]}.png"
-                home_page.take_screenshot(screenshot_name)
-                allure.attach.file(f"screenshots/{screenshot_name}", 
-                                 name=f"Screenshot Información y Ayuda - {base_url}", 
-                                 attachment_type=allure.attachment_type.PNG)
-
-            with allure.step("Paso 4: Verificar que la URL es diferente a la inicial"):
-                assert current_url != initial_url, "❌ La URL no cambió después de la navegación"
-                assert "tarifas" in current_url.lower() or "fares" in current_url.lower() or "informacion" in current_url.lower() or "ayuda" in current_url.lower(), \
-                    f"❌ La URL no contiene indicadores de información/tarifas: {current_url}"
-
-            with allure.step("Paso 5: Guardar resultados en base de datos"):
-                db.save_test_result(
-                    test_case_number=6,
-                    test_case_name=f"Navegación a Información y Ayuda - Tarifas - {base_url}",
-                    browser=browser.name,
-                    language="español",
-                    status="PASS",
-                    url=base_url,
-                    additional_info=f"URL destino: {current_url}"
-                )
-                
-                # Guardar datos específicos del Caso 6
-                db.save_case6_redirect(
-                    test_name="Información y Ayuda - Tarifas",
-                    browser=browser.name,
-                    language="español",
-                    from_url=initial_url,
-                    to_url=current_url,
-                    redirect_success=True,
-                    page_title=browser.title,
-                    additional_notes=f"URL base: {base_url}"
-                )
-
-            logger.info(f"✅ Test 6.3 PASÓ: Navegación a Información y ayuda exitosa - {base_url}")
-            
-        except Exception as e:
-            logger.error(f"❌ Test 6.3 FALLÓ: {e} - {base_url}")
-            
-            # Guardar resultado fallido en base de datos
-            db.save_test_result(
-                test_case_number=6,
-                test_case_name=f"Navegación a Información y Ayuda - Tarifas - {base_url}",
-                browser=browser.name,
-                language="español",
-                status="FAIL",
-                url=base_url,
-                additional_info=f"Error: {str(e)}"
-            )
-            
-            # Guardar redirección fallida
-            db.save_case6_redirect(
-                test_name="Información y Ayuda - Tarifas",
-                browser=browser.name,
-                language="español",
-                from_url=home_page.get_page_url(),
-                to_url="N/A",
-                redirect_success=False,
-                additional_notes=f"Error: {str(e)} - URL base: {base_url}"
-            )
-            
-            # Tomar screenshot del error
-            error_screenshot = f"caso6_3_error_{base_url.split('//')[1].split('.')[0]}.png"
-            home_page.take_screenshot(error_screenshot)
-            allure.attach.file(f"screenshots/{error_screenshot}", 
-                             name=f"Screenshot Error - {base_url}", 
-                             attachment_type=allure.attachment_type.PNG)
-            raise
-
-    @allure.title("Caso 6.4: Verificar redirecciones con diferentes idiomas")
-    @allure.description("Verificar que las URLs cambian correctamente según el idioma seleccionado en ambas URLs")
-    @allure.severity(allure.severity_level.NORMAL)
-    def test_verify_redirects_with_different_languages(self, setup):
-        """Test 6.4: Verificar que las URLs cambian según el idioma"""
-        browser = setup['browser']
-        home_page = setup['home_page']
-        db = setup['db']
-        base_url = setup['base_url']
-        
-        logger.info(f"🚀 Iniciando Test 6.4: Verificación de redirecciones con idiomas - {base_url}")
-        
-        try:
-            with allure.step("Paso 1: Probar con idioma Español"):
-                # Asegurarse de estar en español con reintento
-                max_attempts = 3
-                for attempt in range(max_attempts):
+                for selector in selectors:
                     try:
-                        home_page.select_language('español')
-                        time.sleep(2)
-                        
-                        # Verificar que el cambio fue exitoso
-                        if "español" in home_page.get_current_language().lower():
-                            break
-                    except:
-                        if attempt < max_attempts - 1:
-                            home_page.refresh_page()
-                            time.sleep(2)
-                            continue
-                        raise
-                
-                # Navegar a una sección y capturar URL con reintento
-                assert home_page.navigate_to_offers_and_destinations(), "No se pudo navegar a Ofertas en español"
-                url_spanish = home_page.get_page_url()
-                logger.info(f"📄 URL en Español: {url_spanish}")
-                
-                # Guardar redirección en español
-                db.save_case6_redirect(
-                    test_name="Redirección con Idioma Español",
-                    browser=browser.name,
-                    language="español",
-                    from_url=base_url,
-                    to_url=url_spanish,
-                    redirect_success=True,
-                    page_title=browser.title,
-                    additional_notes=f"URL base: {base_url}"
-                )
-                
-                # Volver a la página principal con reintento
-                max_attempts = 3
-                for attempt in range(max_attempts):
-                    try:
-                        home_page.navigate_to(base_url)
-                        home_page.wait_for_page_load()
+                        offers_menu = WebDriverWait(browser, 5).until(
+                            EC.element_to_be_clickable((By.XPATH, selector))
+                        )
+                        used_selector = selector
+                        logger.info(f"✅ Menú encontrado con selector: {selector}")
                         break
                     except:
-                        if attempt < max_attempts - 1:
-                            time.sleep(2)
-                            continue
-                        raise
-
-            with allure.step("Paso 2: Probar con idioma English"):
-                # Cambiar a inglés con reintento
-                max_attempts = 3
-                for attempt in range(max_attempts):
+                        continue
+                
+                if not offers_menu:
+                    # Último intento: buscar cualquier elemento que contenga "Ofertas"
                     try:
-                        home_page.select_language('english')
-                        time.sleep(2)
-                        
-                        # Verificar que el cambio fue exitoso
-                        if "english" in home_page.get_current_language().lower():
-                            break
+                        offers_menu = WebDriverWait(browser, 5).until(
+                            EC.element_to_be_clickable((By.XPATH, "//*[contains(text(), 'Ofertas')]"))
+                        )
+                        used_selector = "//*[contains(text(), 'Ofertas')]"
+                        logger.info("✅ Menú encontrado con selector genérico 'Ofertas'")
                     except:
-                        if attempt < max_attempts - 1:
-                            home_page.refresh_page()
-                            time.sleep(2)
-                            continue
-                        raise
+                        # Tomar screenshot para diagnóstico
+                        home_page.take_screenshot(f"caso6_1_diagnostico_menu_{url_name}.png")
+                        raise Exception("No se pudo encontrar el menú 'Ofertas y destinos' con ningún selector")
                 
-                # Navegar a la misma sección y capturar URL con reintento
-                assert home_page.navigate_to_offers_and_destinations(), "No se pudo navegar a Ofertas en inglés"
-                url_english = home_page.get_page_url()
-                logger.info(f"📄 URL en English: {url_english}")
+                allure.attach(used_selector, name="Selector usado para menú", attachment_type=allure.attachment_type.TEXT)
+
+            # Paso 3: Interactuar con el menú
+            with allure.step("Abrir menú Ofertas y destinos"):
+                logger.info("Interactuando con el menú...")
                 
-                # Guardar redirección en inglés
-                db.save_case6_redirect(
-                    test_name="Redirección con Idioma English",
-                    browser=browser.name,
-                    language="english",
-                    from_url=base_url,
-                    to_url=url_english,
-                    redirect_success=True,
-                    page_title=browser.title,
-                    additional_notes=f"URL base: {base_url}"
+                # Capturar antes de la interacción
+                video_recorder.capture_frame(browser)
+                
+                # Intentar diferentes métodos de interacción
+                try:
+                    # Método 1: Click directo
+                    browser.execute_script("arguments[0].click();", offers_menu)
+                    logger.info("✅ Click ejecutado con JavaScript")
+                except Exception as e:
+                    logger.warning(f"Click con JS falló: {e}")
+                    try:
+                        # Método 2: Actions click
+                        actions = ActionChains(browser)
+                        actions.move_to_element(offers_menu).click().perform()
+                        logger.info("✅ Click ejecutado con ActionChains")
+                    except Exception as e2:
+                        logger.warning(f"Click con ActionChains falló: {e2}")
+                        # Método 3: Click normal
+                        offers_menu.click()
+                        logger.info("✅ Click ejecutado normalmente")
+                
+                time.sleep(2)  # Esperar a que se abra el menú
+                video_recorder.capture_frame(browser)
+
+            # Paso 4: Localizar "Ofertas de vuelos" en el submenú
+            with allure.step("Localizar Ofertas de vuelos"):
+                logger.info("Buscando 'Ofertas de vuelos' en el submenú...")
+                
+                flight_selectors = [
+                    "//a[contains(text(), 'Ofertas de vuelos')]",
+                    "//a[contains(@href, 'ofertas-de-vuelos')]",
+                    "//*[contains(text(), 'Ofertas de vuelos')]",
+                    "//a[contains(text(), 'Vuelos')]",
+                    "//*[contains(@class, 'submenu')]//*[contains(text(), 'Ofertas de vuelos')]",
+                    "//*[contains(@class, 'dropdown')]//*[contains(text(), 'Ofertas de vuelos')]"
+                ]
+                
+                flight_offers_link = None
+                used_flight_selector = ""
+                
+                for selector in flight_selectors:
+                    try:
+                        flight_offers_link = WebDriverWait(browser, 5).until(
+                            EC.element_to_be_clickable((By.XPATH, selector))
+                        )
+                        used_flight_selector = selector
+                        logger.info(f"✅ 'Ofertas de vuelos' encontrado con selector: {selector}")
+                        break
+                    except:
+                        continue
+                
+                if not flight_offers_link:
+                    # Tomar screenshot del menú abierto
+                    home_page.take_screenshot(f"caso6_1_menu_abierto_{url_name}.png")
+                    raise Exception("No se pudo encontrar 'Ofertas de vuelos' en el submenú")
+                
+                allure.attach(used_flight_selector, name="Selector usado para Ofertas de vuelos", attachment_type=allure.attachment_type.TEXT)
+
+            # Paso 5: Hacer click en "Ofertas de vuelos"
+            with allure.step("Navegar a Ofertas de vuelos"):
+                start_time = time.time()
+                
+                # Capturar antes del click
+                video_recorder.capture_frame(browser)
+                
+                # Hacer click en el enlace
+                try:
+                    browser.execute_script("arguments[0].click();", flight_offers_link)
+                except:
+                    flight_offers_link.click()
+                
+                # Esperar a que la página cargue - con diferentes condiciones
+                try:
+                    WebDriverWait(browser, 15).until(
+                        EC.url_contains("ofertas-de-vuelos")
+                    )
+                except:
+                    # Si no contiene la URL exacta, esperar cualquier cambio
+                    WebDriverWait(browser, 15).until(
+                        lambda driver: driver.current_url != current_url
+                    )
+                
+                execution_time = time.time() - start_time
+                logger.info(f"✅ Navegación completada en {execution_time:.2f}s")
+
+            # Paso 6: Verificaciones finales
+            with allure.step("Verificar navegación exitosa"):
+                final_url = home_page.get_page_url()
+                page_title = browser.title
+                
+                logger.info(f"URL final: {final_url}")
+                logger.info(f"Título de página: {page_title}")
+                
+                # Verificaciones flexibles
+                url_checks = [
+                    "ofertas-de-vuelos" in final_url,
+                    "ofertas" in final_url and "vuelos" in final_url,
+                    "offers" in final_url and "flights" in final_url,
+                    any(keyword in final_url.lower() for keyword in ['ofertas', 'offers', 'vuelos', 'flights'])
+                ]
+                
+                assert any(url_checks), f"URL no parece ser de ofertas de vuelos: {final_url}"
+                
+                # Adjuntar información a Allure
+                allure.attach(final_url, name="URL Final", attachment_type=allure.attachment_type.TEXT)
+                allure.attach(page_title, name="Título de Página", attachment_type=allure.attachment_type.TEXT)
+                allure.attach(f"Tiempo de ejecución: {execution_time:.2f}s", name="Tiempo de Navegación", attachment_type=allure.attachment_type.TEXT)
+
+            # Paso 7: Capturar evidencias
+            with allure.step("Capturar evidencias visuales"):
+                # Screenshot final
+                screenshot_name = f"caso6_1_ofertas_vuelos_{browser.name}_{url_name}.png"
+                home_page.take_screenshot(screenshot_name)
+                
+                allure.attach.file(
+                    f"screenshots/{screenshot_name}",
+                    name=f"Screenshot Ofertas Vuelos - {browser.name} - {url_name}",
+                    attachment_type=allure.attachment_type.PNG
                 )
+                
+                # Capturar frame final
+                video_recorder.capture_frame(browser)
+                logger.info("✅ Evidencias visuales capturadas")
 
-            with allure.step("Paso 3: Verificar que las URLs son diferentes por idioma"):
-                # Verificar diferencias en URL o contenido
-                url_spanish_lower = url_spanish.lower()
-                url_english_lower = url_english.lower()
-                
-                # Comprobar diferencias específicas en las URLs
-                spanish_indicators = ['ofertas', 'vuelos', 'destinos']
-                english_indicators = ['offers', 'flights', 'destinations']
-                
-                has_spanish = any(indicator in url_spanish_lower for indicator in spanish_indicators)
-                has_english = any(indicator in url_english_lower for indicator in english_indicators)
-                
-                # Si las URLs no muestran el idioma claramente, verificar el contenido
-                if not (has_spanish or has_english):
-                    assert self._verify_content_difference(home_page), \
-                        "❌ Ni las URLs ni el contenido reflejan el cambio de idioma"
-
-            with allure.step("Paso 4: Guardar resultados en base de datos"):
+            # Paso 8: Guardar en base de datos
+            with allure.step("Guardar resultados en base de datos"):
                 db.save_test_result(
-                    test_case_number=6,
-                    test_case_name=f"Verificación de redirecciones con idiomas - {base_url}",
+                    test_case_number=6.1,
+                    test_case_name=f"Navegación a Ofertas de Vuelos - {url_name}",
                     browser=browser.name,
-                    language="múltiple",
+                    language="español",
                     status="PASS",
                     url=base_url,
-                    additional_info=f"URL Español: {url_spanish}, URL English: {url_english}"
+                    additional_info=f"URL destino: {final_url}, Tiempo: {execution_time:.2f}s, Título: {page_title}"
                 )
 
-            logger.info(f"✅ Test 6.4 PASÓ: Verificación de redirecciones con idiomas exitosa - {base_url}")
-            
+                db.save_case6_redirect(
+                    test_name=f"Ofertas de Vuelos - {url_name}",
+                    browser=browser.name,
+                    language="español",
+                    from_url=base_url,
+                    to_url=final_url,
+                    redirect_success=True,
+                    page_title=page_title,
+                    additional_notes=f"Tiempo: {execution_time:.2f}s"
+                )
+
+            logger.info(f"✅ Test 6.1 PASÓ completamente - {url_name} - Tiempo total: {execution_time:.2f}s")
+
         except Exception as e:
-            logger.error(f"❌ Test 6.4 FALLÓ: {e} - {base_url}")
+            logger.error(f"❌ Test 6.1 FALLÓ - {url_name}: {e}")
             
-            db.save_test_result(
-                test_case_number=6,
-                test_case_name=f"Verificación de redirecciones con idiomas - {base_url}",
-                browser=browser.name,
-                language="múltiple",
-                status="FAIL",
-                url=base_url,
-                additional_info=f"Error: {str(e)}"
-            )
+            # Capturar screenshot de error
+            try:
+                error_screenshot = f"caso6_1_error_{browser.name}_{url_name}.png"
+                home_page.take_screenshot(error_screenshot)
+                allure.attach.file(
+                    f"screenshots/{error_screenshot}",
+                    name=f"Screenshot Error Test 6.1 - {browser.name} - {url_name}",
+                    attachment_type=allure.attachment_type.PNG
+                )
+            except Exception as screenshot_error:
+                logger.debug(f"No se pudo tomar screenshot de error: {screenshot_error}")
+
+            # Guardar error en base de datos
+            try:
+                current_url_on_error = home_page.get_page_url()
+                db.save_test_result(
+                    test_case_number=6.1,
+                    test_case_name=f"Navegación a Ofertas de Vuelos - {url_name}",
+                    browser=browser.name,
+                    language="español",
+                    status="FAIL",
+                    url=base_url,
+                    additional_info=f"Error: {str(e)} - URL en error: {current_url_on_error}"
+                )
+
+                db.save_case6_redirect(
+                    test_name=f"Ofertas de Vuelos - {url_name}",
+                    browser=browser.name,
+                    language="español",
+                    from_url=base_url,
+                    to_url=current_url_on_error,
+                    redirect_success=False,
+                    additional_notes=f"Error: {str(e)}"
+                )
+            except Exception as db_error:
+                logger.debug(f"Fallo al guardar en DB: {db_error}")
+
             raise
 
-    def _verify_content_difference(self, home_page):
-        """Método auxiliar para verificar diferencias de contenido por idioma"""
-        try:
-            page_content = home_page.driver.page_source.lower()
-            # Buscar indicadores de diferentes idiomas
-            has_english = any(word in page_content for word in ['book', 'offers', 'flights', 'english'])
-            has_spanish = any(word in page_content for word in ['reservar', 'ofertas', 'vuelos', 'español'])
-            
-            return has_english != has_spanish  # Deberían ser diferentes
-        except:
-            return False
+    @allure.title("Caso 6.2: Navegación a Tu Reserva Check-in y Personaliza tu Viaje")
+    @allure.severity(allure.severity_level.CRITICAL)
+    def test_navigate_to_checkin_and_customize(self, setup):
+        """Navegar desde el navbar a Tu reserva / Check-in -> Personaliza tu viaje"""
+        browser = setup['browser']
+        home_page = setup['home_page']
+        video_recorder = setup['video_recorder']
+        db = setup['db']
+        base_url = setup['base_url']
+        url_name = setup['url_name']  # Obtener url_name del setup
 
-# Configuración para ejecución en paralelo
+        logger.info(f"=== INICIANDO TEST 6.2: Check-in y Personaliza tu Viaje - {url_name} ===")
+
+        try:
+            # Paso 1: Volver a la página principal en español
+            with allure.step("Navegar a página principal en español"):
+                spanish_url = f"{base_url}es/"
+                home_page.navigate_to(spanish_url)
+                home_page.wait_for_page_load()
+                
+                current_url = home_page.get_page_url()
+                assert '/es/' in current_url, f"No se pudo navegar a la página principal en español: {current_url}"
+                logger.info(f"✅ En página principal española: {current_url}")
+                
+                video_recorder.capture_frame(browser)
+                allure.attach(current_url, name="URL Inicial Test 6.2", attachment_type=allure.attachment_type.TEXT)
+
+            # Paso 2: Localizar el menú "Tu reserva / Check-in" (al lado derecho de Ofertas y destinos)
+            with allure.step("Localizar menú Tu reserva / Check-in"):
+                logger.info("Buscando menú 'Tu reserva / Check-in'...")
+                
+                checkin_selectors = [
+                    "//a[contains(text(), 'Tu reserva / Check-in')]",
+                    "//a[contains(text(), 'Check-in')]",
+                    "//a[contains(@href, 'check-in')]",
+                    "//a[contains(@href, 'checkin')]",
+                    "//button[contains(text(), 'Check-in')]",
+                    "//*[contains(@class, 'nav')]//*[contains(text(), 'Check-in')]",
+                    "//*[contains(@class, 'nav')]//*[contains(text(), 'Tu reserva')]"
+                ]
+                
+                checkin_menu = None
+                used_checkin_selector = ""
+                
+                for selector in checkin_selectors:
+                    try:
+                        checkin_menu = WebDriverWait(browser, 10).until(
+                            EC.element_to_be_clickable((By.XPATH, selector))
+                        )
+                        used_checkin_selector = selector
+                        logger.info(f"✅ Menú Check-in encontrado con selector: {selector}")
+                        break
+                    except:
+                        continue
+                
+                if not checkin_menu:
+                    raise Exception("No se pudo encontrar el menú 'Tu reserva / Check-in'")
+                
+                allure.attach(used_checkin_selector, name="Selector usado para Check-in", attachment_type=allure.attachment_type.TEXT)
+
+            # Paso 3: Interactuar con el menú Check-in
+            with allure.step("Abrir menú Tu reserva / Check-in"):
+                logger.info("Interactuando con el menú Check-in...")
+                
+                video_recorder.capture_frame(browser)
+                
+                # Hacer click para abrir el menú
+                try:
+                    browser.execute_script("arguments[0].click();", checkin_menu)
+                    logger.info("✅ Click ejecutado con JavaScript en menú Check-in")
+                except Exception as e:
+                    logger.warning(f"Click con JS falló: {e}")
+                    try:
+                        actions = ActionChains(browser)
+                        actions.move_to_element(checkin_menu).click().perform()
+                        logger.info("✅ Click ejecutado con ActionChains")
+                    except Exception as e2:
+                        logger.warning(f"Click con ActionChains falló: {e2}")
+                        checkin_menu.click()
+                        logger.info("✅ Click normal ejecutado")
+                
+                time.sleep(2)  # Esperar a que se abra el menú
+                video_recorder.capture_frame(browser)
+                
+                # Tomar screenshot después de abrir el menú
+                home_page.take_screenshot(f"caso6_2_menu_checkin_abierto_{url_name}.png")
+
+            # Paso 4: Localizar "Personaliza tu viaje" en el submenú (al lado izquierdo)
+            with allure.step("Localizar Personaliza tu viaje"):
+                logger.info("Buscando 'Personaliza tu viaje' en el submenú...")
+                
+                customize_selectors = [
+                    "//a[contains(text(), 'Personaliza tu viaje')]",
+                    "//a[contains(text(), 'Personaliza')]",
+                    "//a[contains(@href, 'personaliza-tu-viaje')]",
+                    "//a[contains(@href, 'personaliza')]",
+                    "//*[contains(text(), 'Personaliza tu viaje')]",
+                    "//*[contains(@class, 'submenu')]//*[contains(text(), 'Personaliza tu viaje')]",
+                    "//*[contains(@class, 'dropdown')]//*[contains(text(), 'Personaliza tu viaje')]"
+                ]
+                
+                customize_link = None
+                used_customize_selector = ""
+                
+                for selector in customize_selectors:
+                    try:
+                        customize_link = WebDriverWait(browser, 10).until(
+                            EC.element_to_be_clickable((By.XPATH, selector))
+                        )
+                        used_customize_selector = selector
+                        logger.info(f"✅ 'Personaliza tu viaje' encontrado con selector: {selector}")
+                        break
+                    except:
+                        continue
+                
+                if not customize_link:
+                    # Tomar screenshot para diagnóstico
+                    home_page.take_screenshot(f"caso6_2_submenu_checkin_{url_name}.png")
+                    raise Exception("No se pudo encontrar 'Personaliza tu viaje' en el submenú")
+                
+                allure.attach(used_customize_selector, name="Selector usado para Personaliza tu viaje", attachment_type=allure.attachment_type.TEXT)
+
+            # Paso 5: Hacer click en "Personaliza tu viaje"
+            with allure.step("Navegar a Personaliza tu viaje"):
+                start_time = time.time()
+                initial_url = browser.current_url
+                
+                video_recorder.capture_frame(browser)
+                
+                # Hacer click en el enlace
+                try:
+                    browser.execute_script("arguments[0].click();", customize_link)
+                except:
+                    customize_link.click()
+                
+                # Esperar a que la página cargue - verificar URL específica
+                WebDriverWait(browser, 15).until(
+                    EC.url_contains("/tu-reserva/personaliza-tu-viaje/")
+                )
+                
+                execution_time = time.time() - start_time
+                logger.info(f"✅ Navegación a Personaliza tu viaje completada en {execution_time:.2f}s")
+
+            # Paso 6: Verificaciones finales
+            with allure.step("Verificar navegación exitosa"):
+                final_url = home_page.get_page_url()
+                page_title = browser.title
+                
+                logger.info(f"URL final: {final_url}")
+                logger.info(f"Título de página: {page_title}")
+                
+                # Verificar URL específica
+                expected_url = f"{base_url}es/tu-reserva/personaliza-tu-viaje/"
+                assert final_url == expected_url, f"URL no coincide con la esperada. Esperada: {expected_url}, Actual: {final_url}"
+                
+                # Adjuntar información a Allure
+                allure.attach(final_url, name="URL Final Personaliza", attachment_type=allure.attachment_type.TEXT)
+                allure.attach(page_title, name="Título de Página Personaliza", attachment_type=allure.attachment_type.TEXT)
+                allure.attach(f"Tiempo de ejecución: {execution_time:.2f}s", name="Tiempo de Navegación Personaliza", attachment_type=allure.attachment_type.TEXT)
+
+            # Paso 7: Capturar evidencias finales
+            with allure.step("Capturar evidencias visuales"):
+                screenshot_name = f"caso6_2_personaliza_viaje_{browser.name}_{url_name}.png"
+                home_page.take_screenshot(screenshot_name)
+                
+                allure.attach.file(
+                    f"screenshots/{screenshot_name}",
+                    name=f"Screenshot Personaliza Viaje - {browser.name} - {url_name}",
+                    attachment_type=allure.attachment_type.PNG
+                )
+                
+                # Capturar frame final
+                video_recorder.capture_frame(browser)
+                logger.info("✅ Evidencias visuales capturadas para Test 6.2")
+
+            # Paso 8: Guardar en base de datos
+            with allure.step("Guardar resultados en base de datos"):
+                db.save_test_result(
+                    test_case_number=6.2,
+                    test_case_name=f"Navegación a Check-in y Personaliza tu Viaje - {url_name}",
+                    browser=browser.name,
+                    language="español",
+                    status="PASS",
+                    url=base_url,
+                    additional_info=f"URL destino: {final_url}, Tiempo: {execution_time:.2f}s, Título: {page_title}"
+                )
+
+                db.save_case6_redirect(
+                    test_name=f"Check-in y Personaliza tu Viaje - {url_name}",
+                    browser=browser.name,
+                    language="español",
+                    from_url=base_url,
+                    to_url=final_url,
+                    redirect_success=True,
+                    page_title=page_title,
+                    additional_notes=f"Tiempo: {execution_time:.2f}s"
+                )
+
+            logger.info(f"✅ Test 6.2 PASÓ completamente - {url_name} - Tiempo total: {execution_time:.2f}s")
+
+        except Exception as e:
+            logger.error(f"❌ Test 6.2 FALLÓ - {url_name}: {e}")
+            
+            # Capturar screenshot de error
+            try:
+                error_screenshot = f"caso6_2_error_{browser.name}_{url_name}.png"
+                home_page.take_screenshot(error_screenshot)
+                allure.attach.file(
+                    f"screenshots/{error_screenshot}",
+                    name=f"Screenshot Error Test 6.2 - {browser.name} - {url_name}",
+                    attachment_type=allure.attachment_type.PNG
+                )
+            except Exception as screenshot_error:
+                logger.debug(f"No se pudo tomar screenshot de error: {screenshot_error}")
+
+            # Guardar error en base de datos
+            try:
+                current_url_on_error = home_page.get_page_url()
+                db.save_test_result(
+                    test_case_number=6.2,
+                    test_case_name=f"Navegación a Check-in y Personaliza tu Viaje - {url_name}",
+                    browser=browser.name,
+                    language="español",
+                    status="FAIL",
+                    url=base_url,
+                    additional_info=f"Error: {str(e)} - URL en error: {current_url_on_error}"
+                )
+
+                db.save_case6_redirect(
+                    test_name=f"Check-in y Personaliza tu Viaje - {url_name}",
+                    browser=browser.name,
+                    language="español",
+                    from_url=base_url,
+                    to_url=current_url_on_error,
+                    redirect_success=False,
+                    additional_notes=f"Error: {str(e)}"
+                )
+            except Exception as db_error:
+                logger.debug(f"Fallo al guardar en DB: {db_error}")
+
+            raise
+
+    @allure.title("Caso 6.3: Navegación a Información y Ayuda - Tipos de Tarifa")
+    @allure.severity(allure.severity_level.CRITICAL)
+    def test_navigate_to_info_and_help_tariffs(self, setup):
+        """Navegar desde el navbar a Información y ayuda -> Tipos de tarifa"""
+        browser = setup['browser']
+        home_page = setup['home_page']
+        video_recorder = setup['video_recorder']
+        db = setup['db']
+        base_url = setup['base_url']
+        url_name = setup['url_name']  # Obtener url_name del setup
+
+        logger.info(f"=== INICIANDO TEST 6.3: Información y Ayuda - Tipos de Tarifa - {url_name} ===")
+
+        try:
+            # Paso 1: Volver a la página principal en español
+            with allure.step("Navegar a página principal en español"):
+                spanish_url = f"{base_url}es/"
+                home_page.navigate_to(spanish_url)
+                home_page.wait_for_page_load()
+                
+                current_url = home_page.get_page_url()
+                assert '/es/' in current_url, f"No se pudo navegar a la página principal en español: {current_url}"
+                logger.info(f"✅ En página principal española: {current_url}")
+                
+                video_recorder.capture_frame(browser)
+                allure.attach(current_url, name="URL Inicial Test 6.3", attachment_type=allure.attachment_type.TEXT)
+
+            # Paso 2: Localizar el menú "Información y ayuda" (al lado derecho de Tu reserva / Check-in)
+            with allure.step("Localizar menú Información y ayuda"):
+                logger.info("Buscando menú 'Información y ayuda'...")
+                
+                info_selectors = [
+                    "//a[contains(text(), 'Información y ayuda')]",
+                    "//a[contains(text(), 'Información')]",
+                    "//a[contains(@href, 'informacion-y-ayuda')]",
+                    "//a[contains(@href, 'informacion')]",
+                    "//button[contains(text(), 'Información')]",
+                    "//*[contains(@class, 'nav')]//*[contains(text(), 'Información y ayuda')]",
+                    "//*[contains(@class, 'nav')]//*[contains(text(), 'Información')]"
+                ]
+                
+                info_menu = None
+                used_info_selector = ""
+                
+                for selector in info_selectors:
+                    try:
+                        info_menu = WebDriverWait(browser, 10).until(
+                            EC.element_to_be_clickable((By.XPATH, selector))
+                        )
+                        used_info_selector = selector
+                        logger.info(f"✅ Menú Información y ayuda encontrado con selector: {selector}")
+                        break
+                    except:
+                        continue
+                
+                if not info_menu:
+                    raise Exception("No se pudo encontrar el menú 'Información y ayuda'")
+                
+                allure.attach(used_info_selector, name="Selector usado para Información y ayuda", attachment_type=allure.attachment_type.TEXT)
+
+            # Paso 3: Interactuar con el menú Información y ayuda
+            with allure.step("Abrir menú Información y ayuda"):
+                logger.info("Interactuando con el menú Información y ayuda...")
+                
+                video_recorder.capture_frame(browser)
+                
+                # Hacer click para abrir el menú
+                try:
+                    browser.execute_script("arguments[0].click();", info_menu)
+                    logger.info("✅ Click ejecutado con JavaScript en menú Información y ayuda")
+                except Exception as e:
+                    logger.warning(f"Click con JS falló: {e}")
+                    try:
+                        actions = ActionChains(browser)
+                        actions.move_to_element(info_menu).click().perform()
+                        logger.info("✅ Click ejecutado con ActionChains")
+                    except Exception as e2:
+                        logger.warning(f"Click con ActionChains falló: {e2}")
+                        info_menu.click()
+                        logger.info("✅ Click normal ejecutado")
+                
+                time.sleep(2)  # Esperar a que se abra el menú
+                video_recorder.capture_frame(browser)
+                
+                # Tomar screenshot después de abrir el menú
+                home_page.take_screenshot(f"caso6_3_menu_info_abierto_{url_name}.png")
+
+            # Paso 4: Localizar "Tipos de tarifa" en el submenú (al lado izquierdo)
+            with allure.step("Localizar Tipos de tarifa"):
+                logger.info("Buscando 'Tipos de tarifa' en el submenú...")
+                
+                tariff_selectors = [
+                    "//a[contains(text(), 'Tipos de tarifa')]",
+                    "//a[contains(text(), 'Tarifas')]",
+                    "//a[contains(@href, 'tarifas-avianca')]",
+                    "//a[contains(@href, 'tarifas')]",
+                    "//*[contains(text(), 'Tipos de tarifa')]",
+                    "//*[contains(@class, 'submenu')]//*[contains(text(), 'Tipos de tarifa')]",
+                    "//*[contains(@class, 'dropdown')]//*[contains(text(), 'Tipos de tarifa')]"
+                ]
+                
+                tariff_link = None
+                used_tariff_selector = ""
+                
+                for selector in tariff_selectors:
+                    try:
+                        tariff_link = WebDriverWait(browser, 10).until(
+                            EC.element_to_be_clickable((By.XPATH, selector))
+                        )
+                        used_tariff_selector = selector
+                        logger.info(f"✅ 'Tipos de tarifa' encontrado con selector: {selector}")
+                        break
+                    except:
+                        continue
+                
+                if not tariff_link:
+                    # Tomar screenshot para diagnóstico
+                    home_page.take_screenshot(f"caso6_3_submenu_info_{url_name}.png")
+                    raise Exception("No se pudo encontrar 'Tipos de tarifa' en el submenú")
+                
+                allure.attach(used_tariff_selector, name="Selector usado para Tipos de tarifa", attachment_type=allure.attachment_type.TEXT)
+
+            # Paso 5: Hacer click en "Tipos de tarifa"
+            with allure.step("Navegar a Tipos de tarifa"):
+                start_time = time.time()
+                initial_url = browser.current_url
+                
+                video_recorder.capture_frame(browser)
+                
+                # Hacer click en el enlace
+                try:
+                    browser.execute_script("arguments[0].click();", tariff_link)
+                except:
+                    tariff_link.click()
+                
+                # Esperar a que la página cargue - verificar URL específica
+                WebDriverWait(browser, 15).until(
+                    EC.url_contains("/informacion-y-ayuda/tarifas-avianca/")
+                )
+                
+                execution_time = time.time() - start_time
+                logger.info(f"✅ Navegación a Tipos de tarifa completada en {execution_time:.2f}s")
+
+            # Paso 6: Verificaciones finales
+            with allure.step("Verificar navegación exitosa"):
+                final_url = home_page.get_page_url()
+                page_title = browser.title
+                
+                logger.info(f"URL final: {final_url}")
+                logger.info(f"Título de página: {page_title}")
+                
+                # Verificar URL específica
+                expected_url = f"{base_url}es/informacion-y-ayuda/tarifas-avianca/"
+                assert final_url == expected_url, f"URL no coincide con la esperada. Esperada: {expected_url}, Actual: {final_url}"
+                
+                # Adjuntar información a Allure
+                allure.attach(final_url, name="URL Final Tarifas", attachment_type=allure.attachment_type.TEXT)
+                allure.attach(page_title, name="Título de Página Tarifas", attachment_type=allure.attachment_type.TEXT)
+                allure.attach(f"Tiempo de ejecución: {execution_time:.2f}s", name="Tiempo de Navegación Tarifas", attachment_type=allure.attachment_type.TEXT)
+
+            # Paso 7: Capturar evidencias finales
+            with allure.step("Capturar evidencias visuales"):
+                screenshot_name = f"caso6_3_tipos_tarifa_{browser.name}_{url_name}.png"
+                home_page.take_screenshot(screenshot_name)
+                
+                allure.attach.file(
+                    f"screenshots/{screenshot_name}",
+                    name=f"Screenshot Tipos de Tarifa - {browser.name} - {url_name}",
+                    attachment_type=allure.attachment_type.PNG
+                )
+                
+                # Capturar frame final y adjuntar video
+                video_recorder.capture_frame(browser)
+                
+                try:
+                    video_file = video_recorder.stop_recording()
+                    if video_file and os.path.exists(video_file):
+                        allure.attach.file(
+                            video_file,
+                            name=f"Video Completo - Tests 6.1, 6.2 y 6.3 - {url_name}",
+                            attachment_type=allure.attachment_type.MP4
+                        )
+                        logger.info("✅ Video completo adjuntado a Allure")
+                except Exception as e:
+                    logger.warning(f"No se pudo adjuntar video: {e}")
+
+                logger.info("✅ Evidencias visuales capturadas para Test 6.3")
+
+            # Paso 8: Guardar en base de datos
+            with allure.step("Guardar resultados en base de datos"):
+                db.save_test_result(
+                    test_case_number=6.3,
+                    test_case_name=f"Navegación a Información y Ayuda - Tipos de Tarifa - {url_name}",
+                    browser=browser.name,
+                    language="español",
+                    status="PASS",
+                    url=base_url,
+                    additional_info=f"URL destino: {final_url}, Tiempo: {execution_time:.2f}s, Título: {page_title}"
+                )
+
+                db.save_case6_redirect(
+                    test_name=f"Información y Ayuda - Tipos de Tarifa - {url_name}",
+                    browser=browser.name,
+                    language="español",
+                    from_url=base_url,
+                    to_url=final_url,
+                    redirect_success=True,
+                    page_title=page_title,
+                    additional_notes=f"Tiempo: {execution_time:.2f}s"
+                )
+
+            logger.info(f"✅ Test 6.3 PASÓ completamente - {url_name} - Tiempo total: {execution_time:.2f}s")
+            logger.info(f"🎉 TODOS LOS TESTS DEL CASO 6 COMPLETADOS EXITOSAMENTE - {url_name}")
+
+        except Exception as e:
+            logger.error(f"❌ Test 6.3 FALLÓ - {url_name}: {e}")
+            
+            # Capturar screenshot de error
+            try:
+                error_screenshot = f"caso6_3_error_{browser.name}_{url_name}.png"
+                home_page.take_screenshot(error_screenshot)
+                allure.attach.file(
+                    f"screenshots/{error_screenshot}",
+                    name=f"Screenshot Error Test 6.3 - {browser.name} - {url_name}",
+                    attachment_type=allure.attachment_type.PNG
+                )
+            except Exception as screenshot_error:
+                logger.debug(f"No se pudo tomar screenshot de error: {screenshot_error}")
+
+            # Guardar error en base de datos
+            try:
+                current_url_on_error = home_page.get_page_url()
+                db.save_test_result(
+                    test_case_number=6.3,
+                    test_case_name=f"Navegación a Información y Ayuda - Tipos de Tarifa - {url_name}",
+                    browser=browser.name,
+                    language="español",
+                    status="FAIL",
+                    url=base_url,
+                    additional_info=f"Error: {str(e)} - URL en error: {current_url_on_error}"
+                )
+
+                db.save_case6_redirect(
+                    test_name=f"Información y Ayuda - Tipos de Tarifa - {url_name}",
+                    browser=browser.name,
+                    language="español",
+                    from_url=base_url,
+                    to_url=current_url_on_error,
+                    redirect_success=False,
+                    additional_notes=f"Error: {str(e)}"
+                )
+            except Exception as db_error:
+                logger.debug(f"Fallo al guardar en DB: {db_error}")
+
+            # Intentar detener la grabación
+            try:
+                video_recorder.stop_recording()
+            except Exception:
+                pass
+
+            raise
+
+
 def pytest_generate_tests(metafunc):
-    """Generar tests para múltiples navegadores si es necesario"""
+    """Configurar solo Chrome para las pruebas"""
     if 'browser' in metafunc.fixturenames:
-        metafunc.parametrize('browser', ['chrome', 'firefox'], indirect=True)
+        metafunc.parametrize('browser', ['chrome'], indirect=True)

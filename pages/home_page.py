@@ -61,8 +61,9 @@ class HomePage(BasePage):
     BOOKING_DROPDOWN_MENU = (By.CSS_SELECTOR, ".main-header_nav-primary_item--section-booking .main-header_primary-nav_submenu")
     INFO_DROPDOWN_MENU = (By.CSS_SELECTOR, ".main-header_nav-primary_item--section-info .main-header_primary-nav_submenu")
     
-    # ENLACES ESPECÍFICOS DENTRO DE LOS DROPDOWNS
-    OFFERS_FLIGHTS_LINK = (By.XPATH, "//a[contains(@href, '/ofertas-de-vuelos/')]")
+    # ENLACES ESPECÍFICOS DENTRO DE LOS DROPDOWNS (CORREGIDOS SEGÚN HTML REAL)
+    OFFERS_FLIGHTS_LINK = (By.CSS_SELECTOR, "a.main-header_primary-nav_submenu_item--n3[href*='/ofertas-destinos/ofertas-de-vuelos/']")
+    OFFERS_FLIGHTS_LINK_TEXT = (By.XPATH, "//a[@class='main-header_primary-nav_submenu_item--n3']//span[contains(text(), 'Ofertas de vuelos')]")
     CHECKIN_LINK = (By.XPATH, "//a[contains(@href, '/check-in/')]")
     TARIFFS_LINK = (By.XPATH, "//a[contains(@href, '/tarifas-avianca/')]")
     
@@ -87,6 +88,466 @@ class HomePage(BasePage):
         self.driver.get(url)
         self.wait_for_page_load()
         return True
+
+    # ===== MÉTODOS DE DIAGNÓSTICO PARA CASO 6 =====
+
+    def debug_navbar_links(self):
+        """Método de diagnóstico para encontrar enlaces del navbar"""
+        logger.info("🔍 DEBUG: Buscando todos los enlaces del navbar...")
+        
+        try:
+            # Buscar todos los enlaces en el header/navbar
+            selectors = [
+                "//header//a",
+                "//nav//a", 
+                "//a[contains(@class, 'nav')]",
+                "//a[contains(@href, 'ofertas') or contains(@href, 'offers')]",
+                "//a[contains(@href, 'check-in') or contains(@href, 'checkin')]",
+                "//a[contains(@href, 'tarifas') or contains(@href, 'fares')]"
+            ]
+            
+            all_links = []
+            for selector in selectors:
+                try:
+                    links = self.driver.find_elements(By.XPATH, selector)
+                    for link in links:
+                        try:
+                            href = link.get_attribute('href') or 'No href'
+                            text = link.text.strip() or 'No text'
+                            visible = link.is_displayed()
+                            enabled = link.is_enabled()
+                            
+                            link_info = {
+                                'selector': selector,
+                                'href': href,
+                                'text': text,
+                                'visible': visible,
+                                'enabled': enabled,
+                                'element': link
+                            }
+                            
+                            # Evitar duplicados
+                            if href not in [l['href'] for l in all_links]:
+                                all_links.append(link_info)
+                                
+                        except Exception as e:
+                            logger.debug(f"Error procesando enlace: {e}")
+                            continue
+                            
+                except Exception as e:
+                    logger.debug(f"Error con selector {selector}: {e}")
+                    continue
+            
+            # Log de todos los enlaces encontrados
+            logger.info(f"🔍 Enlaces encontrados: {len(all_links)}")
+            for i, link in enumerate(all_links):
+                logger.info(f"  {i+1}. Text: '{link['text']}'")
+                logger.info(f"     Href: {link['href']}")
+                logger.info(f"     Visible: {link['visible']}, Enabled: {link['enabled']}")
+                logger.info(f"     Selector: {link['selector']}")
+            
+            return all_links
+            
+        except Exception as e:
+            logger.error(f"❌ Error en debug_navbar_links: {e}")
+            return []
+
+    def debug_click_first_offers_link(self):
+        """Intentar hacer click en el primer enlace de ofertas encontrado"""
+        logger.info("🔍 DEBUG: Intentando click en primer enlace de ofertas...")
+        
+        links = self.debug_navbar_links()
+        
+        # Filtrar enlaces de ofertas
+        offers_keywords = ['ofertas', 'offers', 'vuelos', 'flights', 'destinos', 'destinations']
+        offers_links = []
+        
+        for link in links:
+            href = link['href'].lower()
+            text = link['text'].lower()
+            
+            if any(keyword in href or keyword in text for keyword in offers_keywords):
+                if link['visible'] and link['enabled']:
+                    offers_links.append(link)
+        
+        logger.info(f"🔍 Enlaces de ofertas encontrados: {len(offers_links)}")
+        
+        if offers_links:
+            # Intentar hacer click en el primer enlace de ofertas
+            first_link = offers_links[0]
+            logger.info(f"🖱️  Intentando click en: '{first_link['text']}' - {first_link['href']}")
+            
+            try:
+                # Scroll al elemento
+                self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", first_link['element'])
+                time.sleep(1)
+                
+                # Intentar click normal
+                first_link['element'].click()
+                logger.info("✅ Click exitoso")
+                return True
+                
+            except Exception as e:
+                logger.warning(f"❌ Click normal falló: {e}, intentando con JavaScript...")
+                try:
+                    self.driver.execute_script("arguments[0].click();", first_link['element'])
+                    logger.info("✅ Click con JavaScript exitoso")
+                    return True
+                except Exception as e2:
+                    logger.error(f"❌ Click con JavaScript también falló: {e2}")
+                    return False
+        else:
+            logger.error("❌ No se encontraron enlaces de ofertas clickeables")
+            return False
+
+    # ===== MÉTODOS ACTUALIZADOS CON ESTRATEGIA MEJORADA =====
+
+    def navigate_to_offers_and_destinations_optimized_v2(self):
+        """Navegar a ofertas - VERSIÓN MEJORADA que primero entra a Ofertas y destinos y luego a Ofertas de vuelos"""
+        logger.info("🚀 Navegando a Ofertas (versión mejorada)")
+        
+        initial_url = self.get_page_url()
+        logger.info("1) Navegando primero a Ofertas y destinos...")
+        
+        try:
+            # PASO 1: Activar el dropdown de ofertas
+            offers_btn = self.wait.until(EC.element_to_be_clickable(self.OFFERS_DROPDOWN_BUTTON))
+            logger.info("✅ Encontrado botón del menú Ofertas")
+            offers_btn.click()
+            time.sleep(1)  # Pequeña pausa para animación del dropdown
+
+            # PASO 2: Una vez abierto el menú, buscar y hacer click en "Ofertas de vuelos"
+            # Intentar por clase y href exactos primero
+            try:
+                flights_link = self.wait.until(EC.element_to_be_clickable(self.OFFERS_FLIGHTS_LINK))
+                logger.info("✅ Encontrado enlace Ofertas de vuelos por selector principal")
+            except:
+                # Si falla, intentar por el texto del span
+                try:
+                    flights_link = self.wait.until(EC.element_to_be_clickable(self.OFFERS_FLIGHTS_LINK_TEXT))
+                    logger.info("✅ Encontrado enlace Ofertas de vuelos por texto")
+                except:
+                    # Último intento: buscar por href parcial y clase
+                    flights_link = self.wait.until(
+                        EC.element_to_be_clickable(
+                            (By.CSS_SELECTOR, "a[href*='ofertas-de-vuelos'].main-header_primary-nav_submenu_item--n3")
+                        )
+                    )
+                    logger.info("✅ Encontrado enlace por búsqueda alternativa")
+
+            # Capturar info antes del click
+            href = flights_link.get_attribute('href')
+            text = flights_link.text.strip()
+            logger.info(f"2) Haciendo click en: '{text}' -> {href}")
+
+            # Intentar el click con retry
+            max_attempts = 3
+            for attempt in range(max_attempts):
+                try:
+                    flights_link.click()
+                    break
+                except:
+                    if attempt == max_attempts - 1:
+                        self.driver.execute_script("arguments[0].click();", flights_link)
+                    else:
+                        time.sleep(0.5)
+                        continue
+
+            # Esperar cambio de URL
+            WebDriverWait(self.driver, 8).until(
+                lambda driver: driver.current_url != initial_url
+            )
+            
+            # Verificar que llegamos a la URL correcta
+            current_url = self.get_page_url()
+            if '/ofertas-de-vuelos/' in current_url:
+                logger.info(f"✅ Navegación exitosa: {current_url}")
+                return True
+            else:
+                logger.warning(f"⚠️ URL final no es la esperada: {current_url}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"❌ Error en navegación: {e}")
+            return False
+
+    # ===== MÉTODOS OPTIMIZADOS PARA CASO 6: REDIRECCIONES HEADER =====
+    
+    def navigate_to_offers_and_destinations_optimized(self):
+        """Navegar a ofertas de vuelos - VERSIÓN OPTIMIZADA"""
+        logger.info("🚀 Navegando a Ofertas (optimizado)")
+        
+        # Reducir timeout general
+        fast_wait = WebDriverWait(self.driver, 5)
+        
+        try:
+            # ESTRATEGIA DIRECTA: Buscar enlace por href/texto sin dropdowns
+            offer_selectors = [
+                (By.XPATH, "//a[contains(@href, 'ofertas') or contains(@href, 'offers')]"),
+                (By.XPATH, "//a[contains(text(), 'Ofertas') or contains(text(), 'Offers')]"),
+                (By.CSS_SELECTOR, "a[href*='ofertas'], a[href*='offers']"),
+                self.OFFERS_FLIGHTS_LINK,
+                self.OFFERS_FLIGHTS_LINK_ALT
+            ]
+            
+            for selector in offer_selectors:
+                try:
+                    link = fast_wait.until(EC.element_to_be_clickable(selector))
+                    logger.info(f"✅ Enlace encontrado: {link.get_attribute('href')}")
+                    link.click()
+                    
+                    # Espera mínima para cambio de página
+                    WebDriverWait(self.driver, 8).until(
+                        lambda driver: driver.current_url != self.get_page_url()
+                    )
+                    logger.info("✅ Navegación exitosa a Ofertas")
+                    return True
+                    
+                except Exception as e:
+                    continue
+                    
+            logger.error("❌ No se encontró enlace de ofertas")
+            return False
+            
+        except Exception as e:
+            logger.error(f"Error en navegación optimizada: {e}")
+            return False
+
+    def navigate_to_my_booking_checkin_optimized(self):
+        """Navegar a check-in - VERSIÓN OPTIMIZADA"""
+        logger.info("🚀 Navegando a Check-in (optimizado)")
+        
+        fast_wait = WebDriverWait(self.driver, 5)
+        initial_url = self.get_page_url()
+        
+        try:
+            # ESTRATEGIA DIRECTA: Buscar enlaces por palabras clave específicas
+            checkin_selectors = [
+                (By.XPATH, "//a[contains(@href, 'check-in') or contains(@href, 'checkin')]"),
+                (By.XPATH, "//a[contains(text(), 'Check-in') or contains(text(), 'Check-in')]"),
+                (By.CSS_SELECTOR, "a[href*='check-in'], a[href*='checkin']"),
+                self.CHECKIN_LINK,
+                self.CHECKIN_LINK_ALT
+            ]
+            
+            for selector in checkin_selectors:
+                try:
+                    link = fast_wait.until(EC.element_to_be_clickable(selector))
+                    logger.info(f"✅ Enlace check-in encontrado: {link.get_attribute('href')}")
+                    
+                    # Click con JavaScript para evitar problemas de overlays
+                    self.driver.execute_script("arguments[0].click();", link)
+                    
+                    # Esperar cambio de URL con timeout reducido
+                    WebDriverWait(self.driver, 8).until(
+                        lambda driver: driver.current_url != initial_url
+                    )
+                    logger.info("✅ Navegación exitosa a Check-in")
+                    return True
+                    
+                except Exception as e:
+                    continue
+                    
+            logger.error("❌ No se encontró enlace de check-in")
+            return False
+            
+        except Exception as e:
+            logger.error(f"Error en navegación optimizada a check-in: {e}")
+            return False
+
+    def navigate_to_info_and_help_tariffs_optimized(self):
+        """Navegar a tipos de tarifas - VERSIÓN OPTIMIZADA"""
+        logger.info("🚀 Navegando a Tarifas (optimizado)")
+        
+        fast_wait = WebDriverWait(self.driver, 5)
+        
+        try:
+            # ESTRATEGIA DIRECTA: Buscar enlaces específicos
+            tariff_selectors = [
+                (By.XPATH, "//a[contains(@href, 'tarifas') or contains(@href, 'fares')]"),
+                (By.XPATH, "//a[contains(text(), 'Tarifas') or contains(text(), 'Fares')]"),
+                (By.CSS_SELECTOR, "a[href*='tarifas'], a[href*='fares']"),
+                self.TARIFFS_LINK,
+                self.TARIFFS_LINK_ALT
+            ]
+            
+            for selector in tariff_selectors:
+                try:
+                    link = fast_wait.until(EC.element_to_be_clickable(selector))
+                    logger.info(f"✅ Enlace tarifas encontrado: {link.get_attribute('href')}")
+                    link.click()
+                    
+                    # Espera mínima para cambio de página
+                    WebDriverWait(self.driver, 8).until(
+                        lambda driver: driver.current_url != self.get_page_url()
+                    )
+                    logger.info("✅ Navegación exitosa a Tarifas")
+                    return True
+                    
+                except Exception as e:
+                    continue
+                    
+            logger.error("❌ No se encontró enlace de tarifas")
+            return False
+            
+        except Exception as e:
+            logger.error(f"Error en navegación optimizada a tarifas: {e}")
+            return False
+
+    # ===== MÉTODOS ORIGINALES PARA CASO 6 (MANTENIDOS POR COMPATIBILIDAD) =====
+    
+    def navigate_to_offers_and_destinations(self):
+        """Navegar a la sección 'Ofertas y destinos' -> ofertas de vuelos (Método original)"""
+        logger.info("Navegando a: Ofertas y destinos -> ofertas de vuelos")
+        try:
+            # ESTRATEGIA 1: Usar dropdown de ofertas
+            try:
+                logger.info("🔍 Activando dropdown de ofertas...")
+                offers_button = self.wait.until(EC.element_to_be_clickable(self.OFFERS_DROPDOWN_BUTTON))
+                logger.info(f"✅ Botón de ofertas encontrado - Clases: {offers_button.get_attribute('class')}")
+                offers_button.click()
+                
+                # Esperar a que el dropdown se abra
+                self.wait.until(EC.visibility_of_element_located(self.OFFERS_DROPDOWN_MENU))
+                logger.info("✅ Dropdown de ofertas abierto")
+                
+                # Hacer click en el enlace de ofertas de vuelos
+                flights_link = self.wait.until(EC.element_to_be_clickable(self.OFFERS_FLIGHTS_LINK))
+                logger.info(f"✅ Enlace de ofertas de vuelos encontrado - URL: {flights_link.get_attribute('href')}")
+                flights_link.click()
+                
+            except Exception as e1:
+                logger.warning(f"⚠️  Estrategia 1 falló: {e1}")
+                
+                # ESTRATEGIA 2: Usar enlace directo por texto
+                logger.info("🔍 Buscando enlace directo por texto...")
+                flights_link = self.wait.until(EC.element_to_be_clickable(self.OFFERS_FLIGHTS_LINK_ALT))
+                logger.info(f"✅ Enlace alternativo encontrado - Texto: '{flights_link.text}'")
+                flights_link.click()
+            
+            # Esperar a que cargue la nueva página
+            self.wait.until(EC.presence_of_element_located(self.PAGE_LOAD_INDICATOR))
+            time.sleep(2)  # Pausa adicional para asegurar carga
+            
+            logger.info("✅ Navegación exitosa a Ofertas de vuelos")
+            return True
+            
+        except Exception as e:
+            logger.error(f"❌ Error navegando a Ofertas y destinos: {e}")
+            return False
+
+    def navigate_to_my_booking_checkin(self):
+        """Navegar a la sección 'Tu reserva check-in' -> Gestiona tu reserva (Método original)"""
+        logger.info("Navegando a: Tu reserva check-in -> Gestiona tu reserva")
+        return self.navigate_to_my_booking_checkin_optimized()
+
+    def navigate_to_info_and_help_tariffs(self):
+        """Navegar a la sección 'Información y ayuda' -> Tipos de tarifas (Método original)"""
+        logger.info("Navegando a: Información y ayuda -> Tipos de tarifas")
+        return self.navigate_to_info_and_help_tariffs_optimized()
+
+    def _debug_navbar_dropdowns(self):
+        """Método de debug para verificar botones dropdown del navbar"""
+        logger.info("🔍 DEBUG: Analizando botones dropdown del navbar...")
+        try:
+            # Buscar todos los botones del navbar
+            buttons = self.driver.find_elements(By.XPATH, "//button[contains(@class, 'main-header_nav-primary_item_link')]")
+            logger.info(f"🔍 Botones del navbar encontrados: {len(buttons)}")
+            
+            for i, button in enumerate(buttons):
+                classes = button.get_attribute('class')
+                text = button.text.strip() if button.text.strip() else "(sin texto)"
+                visible = button.is_displayed()
+                logger.info(f"  {i+1}. Clases: '{classes}'")
+                logger.info(f"     Texto: '{text}'")
+                logger.info(f"     Visible: {visible}")
+                
+        except Exception as e:
+            logger.error(f"❌ Error en debug dropdowns: {e}")
+
+    def verify_offers_page_loaded(self):
+        """Verificar que la página de ofertas cargó correctamente"""
+        logger.info("Verificando carga de página de ofertas")
+        try:
+            # Verificar por URL o elemento específico
+            current_url = self.get_page_url()
+            if "ofertas" in current_url.lower() or "offers" in current_url.lower() or "destinos" in current_url.lower():
+                logger.info("✅ Página de ofertas cargada correctamente (verificación por URL)")
+                return True
+            
+            # Verificar por elemento específico
+            if self.is_element_present(self.OFFERS_PAGE_INDICATOR):
+                logger.info("✅ Página de ofertas cargada correctamente (verificación por elemento)")
+                return True
+                
+            # Verificación adicional: buscar cualquier indicador de ofertas en la página
+            page_content = self.driver.page_source.lower()
+            if "ofertas" in page_content or "offers" in page_content:
+                logger.info("✅ Página de ofertas cargada correctamente (verificación por contenido)")
+                return True
+                
+            logger.warning("❌ No se pudo verificar la carga de la página de ofertas")
+            return False
+            
+        except Exception as e:
+            logger.error(f"Error verificando página de ofertas: {e}")
+            return False
+
+    def verify_checkin_page_loaded(self):
+        """Verificar que la página de check-in cargó correctamente"""
+        logger.info("Verificando carga de página de check-in")
+        try:
+            # Verificar por URL o elemento específico
+            current_url = self.get_page_url()
+            if "check-in" in current_url.lower() or "checkin" in current_url.lower() or "reserva" in current_url.lower():
+                logger.info("✅ Página de check-in cargada correctamente (verificación por URL)")
+                return True
+            
+            # Verificar por elemento específico
+            if self.is_element_present(self.CHECKIN_PAGE_INDICATOR):
+                logger.info("✅ Página de check-in cargada correctamente (verificación por elemento)")
+                return True
+                
+            # Verificación adicional: buscar cualquier indicador de check-in en la página
+            page_content = self.driver.page_source.lower()
+            if "check-in" in page_content or "checkin" in page_content or "reserva" in page_content:
+                logger.info("✅ Página de check-in cargada correctamente (verificación por contenido)")
+                return True
+                
+            logger.warning("❌ No se pudo verificar la carga de la página de check-in")
+            return False
+            
+        except Exception as e:
+            logger.error(f"Error verificando página de check-in: {e}")
+            return False
+
+    def verify_tariff_types_page_loaded(self):
+        """Verificar que la página de tipos de tarifas cargó correctamente"""
+        logger.info("Verificando carga de página de tipos de tarifas")
+        try:
+            # Verificar por URL o elemento específico
+            current_url = self.get_page_url()
+            if "tarifas" in current_url.lower() or "fares" in current_url.lower() or "informacion" in current_url.lower():
+                logger.info("✅ Página de tipos de tarifas cargada correctamente (verificación por URL)")
+                return True
+            
+            # Verificar por elemento específico
+            if self.is_element_present(self.TARIFF_TYPES_INDICATOR):
+                logger.info("✅ Página de tipos de tarifas cargada correctamente (verificación por elemento)")
+                return True
+                
+            # Verificación adicional: buscar cualquier indicador de tarifas en la página
+            page_content = self.driver.page_source.lower()
+            if "tarifas" in page_content or "fares" in page_content or "informacion" in page_content:
+                logger.info("✅ Página de tipos de tarifas cargada correctamente (verificación por contenido)")
+                return True
+                
+            logger.warning("❌ No se pudo verificar la carga de la página de tipos de tarifas")
+            return False
+            
+        except Exception as e:
+            logger.error(f"Error verificando página de tipos de tarifas: {e}")
+            return False
 
     # ===== MÉTODOS DE IDIOMA (Caso 4) =====
     
@@ -373,380 +834,6 @@ class HomePage(BasePage):
                 
         except Exception as e:
             logger.error(f"Error verificando POS: {e}")
-            return False
-
-    # ===== MÉTODOS PARA CASO 6: REDIRECCIONES HEADER ===== (ESTRATEGIA CORREGIDA)
-    
-    def navigate_to_offers_and_destinations(self):
-        """Navegar a la sección 'Ofertas y destinos' -> ofertas de vuelos"""
-        logger.info("Navegando a: Ofertas y destinos -> ofertas de vuelos")
-        try:
-            # ESTRATEGIA 1: Usar dropdown de ofertas
-            try:
-                logger.info("🔍 Activando dropdown de ofertas...")
-                offers_button = self.wait.until(EC.element_to_be_clickable(self.OFFERS_DROPDOWN_BUTTON))
-                logger.info(f"✅ Botón de ofertas encontrado - Clases: {offers_button.get_attribute('class')}")
-                offers_button.click()
-                
-                # Esperar a que el dropdown se abra
-                self.wait.until(EC.visibility_of_element_located(self.OFFERS_DROPDOWN_MENU))
-                logger.info("✅ Dropdown de ofertas abierto")
-                
-                # Hacer click en el enlace de ofertas de vuelos
-                flights_link = self.wait.until(EC.element_to_be_clickable(self.OFFERS_FLIGHTS_LINK))
-                logger.info(f"✅ Enlace de ofertas de vuelos encontrado - URL: {flights_link.get_attribute('href')}")
-                flights_link.click()
-                
-            except Exception as e1:
-                logger.warning(f"⚠️  Estrategia 1 falló: {e1}")
-                
-                # ESTRATEGIA 2: Usar enlace directo por texto
-                logger.info("🔍 Buscando enlace directo por texto...")
-                flights_link = self.wait.until(EC.element_to_be_clickable(self.OFFERS_FLIGHTS_LINK_ALT))
-                logger.info(f"✅ Enlace alternativo encontrado - Texto: '{flights_link.text}'")
-                flights_link.click()
-            
-            # Esperar a que cargue la nueva página
-            self.wait.until(EC.presence_of_element_located(self.PAGE_LOAD_INDICATOR))
-            time.sleep(2)  # Pausa adicional para asegurar carga
-            
-            logger.info("✅ Navegación exitosa a Ofertas de vuelos")
-            # Guardar evidencia rápida
-            try:
-                ts = int(time.time())
-                screenshot = f"caso6_offers_success_{ts}.png"
-                self.take_screenshot(screenshot)
-                with open(f"screenshots/caso6_offers_success_{ts}.html", 'w', encoding='utf-8') as f:
-                    f.write(self.driver.page_source)
-                logger.info(f"Evidencia guardada: screenshots/{screenshot}")
-            except Exception as e:
-                logger.debug(f"No se pudo guardar evidencia de ofertas: {e}")
-            return True
-            
-        except Exception as e:
-            logger.error(f"❌ Error navegando a Ofertas y destinos: {e}")
-            self._debug_navbar_dropdowns()
-            # ESTRATEGIA FINAL: Buscar cualquier enlace en header/nav que contenga indicadores de ofertas
-            try:
-                logger.info("🔁 Estrategia final: buscar enlaces en header/nav por texto/href para Ofertas")
-                candidates = self.driver.find_elements(By.XPATH, "//header//a | //nav//a | //a")
-                keywords = ['ofertas', 'offers', 'oferta', 'flight', 'vuelos', 'destinos']
-                for link in candidates:
-                    try:
-                        href = (link.get_attribute('href') or '').lower()
-                        text = (link.text or '').lower()
-                        if any(k in href or k in text for k in keywords):
-                            logger.info(f"✅ Enlace candidato encontrado (texto='{text}', href='{href}'), intentando click")
-                            try:
-                                link.click()
-                            except Exception:
-                                # fallback a JS click si click() falla (por overlays, estilos, etc.)
-                                self.driver.execute_script("arguments[0].click();", link)
-
-                            self.wait.until(EC.presence_of_element_located(self.PAGE_LOAD_INDICATOR))
-                            time.sleep(2)
-                            logger.info("✅ Navegación por estrategia final exitosa")
-                            return True
-                    except Exception:
-                        continue
-            except Exception as e_final:
-                logger.error(f"❌ Estrategia final falló: {e_final}")
-
-            return False
-
-    def navigate_to_my_booking_checkin(self):
-        """Navegar a la sección 'Tu reserva check-in' -> Gestiona tu reserva"""
-        logger.info("Navegando a: Tu reserva check-in -> Gestiona tu reserva (optimizado)")
-        initial_url = self.get_page_url()
-
-        # Helper to capture quick evidence for each attempt
-        def _capture_attempt(tag):
-            try:
-                ts = int(time.time())
-                name = f"caso6_checkin_{tag}_{ts}.png"
-                self.take_screenshot(name)
-                with open(f"screenshots/caso6_checkin_{tag}_{ts}.html", 'w', encoding='utf-8') as f:
-                    f.write(self.driver.page_source)
-                logger.info(f"Evidencia de intento guardada: screenshots/{name}")
-            except Exception as e:
-                logger.debug(f"No se pudo guardar evidencia del intento: {e}")
-
-        # Estrategia rápida A: enlaces directos en header/nav por palabras clave
-        keywords = ['check-in', 'checkin', 'booking', 'reserva', 'manage-booking', 'mi-reserva', 'managebooking', 'my-booking', 'booking/']
-        anchors = self.driver.find_elements(By.XPATH, "//header//a | //nav//a | //a")
-        for idx, a in enumerate(anchors, start=1):
-            try:
-                href = (a.get_attribute('href') or '').lower()
-                text = (a.text or '').lower()
-                if not any(k in href or k in text for k in keywords):
-                    continue
-
-                # Log candidate details and outerHTML for debugging
-                try:
-                    outer = self.driver.execute_script('return arguments[0].outerHTML;', a)
-                except Exception:
-                    outer = ''
-                logger.info(f"Candidato #{idx}: text='{text}' href='{href}'")
-                logger.debug(f"OuterHTML: {outer[:1000]}")
-
-                # Ensure element is visible and in view
-                try:
-                    self.driver.execute_script('arguments[0].scrollIntoView({block: "center"});', a)
-                except Exception:
-                    pass
-
-                # Click with fallbacks and capture evidence
-                try:
-                    a.click()
-                except Exception:
-                    try:
-                        self.driver.execute_script("arguments[0].click();", a)
-                    except Exception:
-                        logger.debug("No se pudo clicar el enlace de forma normal")
-
-                # Wait shortly for URL change
-                try:
-                    WebDriverWait(self.driver, 6).until(lambda d: d.current_url != initial_url)
-                    logger.info(f"✅ Navegación detectada tras clicar candidato #{idx}: {self.get_page_url()}")
-                    _capture_attempt(f"success_{idx}")
-                    return True
-                except Exception:
-                    logger.debug(f"Candidato #{idx} no provocó cambio de URL")
-                    _capture_attempt(f"candidate_{idx}")
-                    continue
-            except Exception as e:
-                logger.debug(f"Error procesando candidato #{idx}: {e}")
-                continue
-
-        # Estrategia B: abrir dropdown y buscar enlace (optimizado con short waits)
-        short_wait = WebDriverWait(self.driver, 6)
-        try:
-            try:
-                booking_btn = short_wait.until(EC.element_to_be_clickable(self.BOOKING_DROPDOWN_BUTTON))
-                try:
-                    booking_btn.click()
-                except Exception:
-                    self.driver.execute_script("arguments[0].click();", booking_btn)
-            except Exception:
-                try:
-                    alt_btn = short_wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "[class*='booking'], [class*='reserva']")))
-                    self.driver.execute_script("arguments[0].click();", alt_btn)
-                except Exception:
-                    logger.debug("No se encontró botón de dropdown de reservas rápidamente")
-
-            link_selectors = [self.CHECKIN_LINK, self.CHECKIN_LINK_ALT,
-                              (By.XPATH, "//a[contains(@href, 'check-in') or contains(@href, 'checkin') or contains(@href, 'manage-booking') or contains(@href, 'booking') or contains(@href, 'reserva')]")]
-
-            for i, sel in enumerate(link_selectors, start=1):
-                try:
-                    el = short_wait.until(EC.element_to_be_clickable(sel))
-                    try:
-                        self.driver.execute_script('arguments[0].scrollIntoView({block: "center"});', el)
-                    except Exception:
-                        pass
-                    try:
-                        el.click()
-                    except Exception:
-                        self.driver.execute_script("arguments[0].click();", el)
-
-                    try:
-                        WebDriverWait(self.driver, 7).until(lambda d: d.current_url != initial_url)
-                        logger.info(f"✅ Navegación a Check-in exitosa desde dropdown: {self.get_page_url()}")
-                        _capture_attempt(f"dropdown_success_{i}")
-                        return True
-                    except Exception:
-                        logger.debug(f"Selector {sel} clicado pero no cambió URL")
-                        _capture_attempt(f"dropdown_candidate_{i}")
-                        continue
-                except Exception as e:
-                    logger.debug(f"Selector {sel} no clickeable: {e}")
-                    continue
-
-        except Exception as e:
-            logger.debug(f"Estrategia dropdown falló rápido: {e}")
-
-        # Falla final: guardar evidencia amplia y debug
-        try:
-            ts = int(time.time())
-            screenshot = f"caso6_checkin_fail_{ts}.png"
-            self.take_screenshot(screenshot)
-            with open(f"screenshots/caso6_checkin_fail_{ts}.html", 'w', encoding='utf-8') as f:
-                f.write(self.driver.page_source)
-            logger.info(f"👀 Evidencia guardada: screenshots/{screenshot} y HTML")
-        except Exception as e:
-            logger.warning(f"No se pudo guardar evidencia: {e}")
-
-        self._debug_navbar_dropdowns()
-        logger.error("❌ No se pudo navegar a Tu reserva check-in en modo optimizado")
-        return False
-
-    def navigate_to_info_and_help_tariffs(self):
-        """Navegar a la sección 'Información y ayuda' -> Tipos de tarifas"""
-        logger.info("Navegando a: Información y ayuda -> Tipos de tarifas")
-        try:
-            # ESTRATEGIA 1: Usar dropdown de información
-            try:
-                logger.info("🔍 Activando dropdown de información...")
-                info_button = self.wait.until(EC.element_to_be_clickable(self.INFO_DROPDOWN_BUTTON))
-                logger.info(f"✅ Botón de información encontrado - Clases: {info_button.get_attribute('class')}")
-                info_button.click()
-                
-                # Esperar a que el dropdown se abra
-                self.wait.until(EC.visibility_of_element_located(self.INFO_DROPDOWN_MENU))
-                logger.info("✅ Dropdown de información abierto")
-                
-                # Hacer click en el enlace de tarifas
-                tariffs_link = self.wait.until(EC.element_to_be_clickable(self.TARIFFS_LINK))
-                logger.info(f"✅ Enlace de tarifas encontrado - URL: {tariffs_link.get_attribute('href')}")
-                tariffs_link.click()
-                
-            except Exception as e1:
-                logger.warning(f"⚠️  Estrategia 1 falló: {e1}")
-                
-                # ESTRATEGIA 2: Usar enlace directo por texto
-                logger.info("🔍 Buscando enlace directo por texto...")
-                tariffs_link = self.wait.until(EC.element_to_be_clickable(self.TARIFFS_LINK_ALT))
-                logger.info(f"✅ Enlace alternativo encontrado - Texto: '{tariffs_link.text}'")
-                tariffs_link.click()
-            
-            # Esperar a que cargue la nueva página
-            self.wait.until(EC.presence_of_element_located(self.PAGE_LOAD_INDICATOR))
-            time.sleep(2)  # Pausa adicional para asegurar carga
-            
-            logger.info("✅ Navegación exitosa a Tipos de tarifas")
-            return True
-            
-        except Exception as e:
-            logger.error(f"❌ Error navegando a Información y ayuda: {e}")
-            self._debug_navbar_dropdowns()
-            # ESTRATEGIA FINAL: Buscar cualquier enlace en header/nav que contenga indicadores de tarifas
-            try:
-                logger.info("🔁 Estrategia final: buscar enlaces en header/nav por texto/href para Tarifas")
-                candidates = self.driver.find_elements(By.XPATH, "//header//a | //nav//a | //a")
-                keywords = ['tarifas', 'fares', 'tarifa', 'tarifs', 'tarifas-avianca', 'pricing']
-                for link in candidates:
-                    try:
-                        href = (link.get_attribute('href') or '').lower()
-                        text = (link.text or '').lower()
-                        if any(k in href or k in text for k in keywords):
-                            logger.info(f"✅ Enlace candidato encontrado (texto='{text}', href='{href}'), intentando click")
-                            try:
-                                link.click()
-                            except Exception:
-                                self.driver.execute_script("arguments[0].click();", link)
-
-                            self.wait.until(EC.presence_of_element_located(self.PAGE_LOAD_INDICATOR))
-                            time.sleep(2)
-                            logger.info("✅ Navegación por estrategia final exitosa")
-                            return True
-                    except Exception:
-                        continue
-            except Exception as e_final:
-                logger.error(f"❌ Estrategia final falló: {e_final}")
-
-            return False
-
-    def _debug_navbar_dropdowns(self):
-        """Método de debug para verificar botones dropdown del navbar"""
-        logger.info("🔍 DEBUG: Analizando botones dropdown del navbar...")
-        try:
-            # Buscar todos los botones del navbar
-            buttons = self.driver.find_elements(By.XPATH, "//button[contains(@class, 'main-header_nav-primary_item_link')]")
-            logger.info(f"🔍 Botones del navbar encontrados: {len(buttons)}")
-            
-            for i, button in enumerate(buttons):
-                classes = button.get_attribute('class')
-                text = button.text.strip() if button.text.strip() else "(sin texto)"
-                visible = button.is_displayed()
-                logger.info(f"  {i+1}. Clases: '{classes}'")
-                logger.info(f"     Texto: '{text}'")
-                logger.info(f"     Visible: {visible}")
-                
-        except Exception as e:
-            logger.error(f"❌ Error en debug dropdowns: {e}")
-
-    def verify_offers_page_loaded(self):
-        """Verificar que la página de ofertas cargó correctamente"""
-        logger.info("Verificando carga de página de ofertas")
-        try:
-            # Verificar por URL o elemento específico
-            current_url = self.get_page_url()
-            if "ofertas" in current_url.lower() or "offers" in current_url.lower() or "destinos" in current_url.lower():
-                logger.info("✅ Página de ofertas cargada correctamente (verificación por URL)")
-                return True
-            
-            # Verificar por elemento específico
-            if self.is_element_present(self.OFFERS_PAGE_INDICATOR):
-                logger.info("✅ Página de ofertas cargada correctamente (verificación por elemento)")
-                return True
-                
-            # Verificación adicional: buscar cualquier indicador de ofertas en la página
-            page_content = self.driver.page_source.lower()
-            if "ofertas" in page_content or "offers" in page_content:
-                logger.info("✅ Página de ofertas cargada correctamente (verificación por contenido)")
-                return True
-                
-            logger.warning("❌ No se pudo verificar la carga de la página de ofertas")
-            return False
-            
-        except Exception as e:
-            logger.error(f"Error verificando página de ofertas: {e}")
-            return False
-
-    def verify_checkin_page_loaded(self):
-        """Verificar que la página de check-in cargó correctamente"""
-        logger.info("Verificando carga de página de check-in")
-        try:
-            # Verificar por URL o elemento específico
-            current_url = self.get_page_url()
-            if "check-in" in current_url.lower() or "checkin" in current_url.lower() or "reserva" in current_url.lower():
-                logger.info("✅ Página de check-in cargada correctamente (verificación por URL)")
-                return True
-            
-            # Verificar por elemento específico
-            if self.is_element_present(self.CHECKIN_PAGE_INDICATOR):
-                logger.info("✅ Página de check-in cargada correctamente (verificación por elemento)")
-                return True
-                
-            # Verificación adicional: buscar cualquier indicador de check-in en la página
-            page_content = self.driver.page_source.lower()
-            if "check-in" in page_content or "checkin" in page_content or "reserva" in page_content:
-                logger.info("✅ Página de check-in cargada correctamente (verificación por contenido)")
-                return True
-                
-            logger.warning("❌ No se pudo verificar la carga de la página de check-in")
-            return False
-            
-        except Exception as e:
-            logger.error(f"Error verificando página de check-in: {e}")
-            return False
-
-    def verify_tariff_types_page_loaded(self):
-        """Verificar que la página de tipos de tarifas cargó correctamente"""
-        logger.info("Verificando carga de página de tipos de tarifas")
-        try:
-            # Verificar por URL o elemento específico
-            current_url = self.get_page_url()
-            if "tarifas" in current_url.lower() or "fares" in current_url.lower() or "informacion" in current_url.lower():
-                logger.info("✅ Página de tipos de tarifas cargada correctamente (verificación por URL)")
-                return True
-            
-            # Verificar por elemento específico
-            if self.is_element_present(self.TARIFF_TYPES_INDICATOR):
-                logger.info("✅ Página de tipos de tarifas cargada correctamente (verificación por elemento)")
-                return True
-                
-            # Verificación adicional: buscar cualquier indicador de tarifas en la página
-            page_content = self.driver.page_source.lower()
-            if "tarifas" in page_content or "fares" in page_content or "informacion" in page_content:
-                logger.info("✅ Página de tipos de tarifas cargada correctamente (verificación por contenido)")
-                return True
-                
-            logger.warning("❌ No se pudo verificar la carga de la página de tipos de tarifas")
-            return False
-            
-        except Exception as e:
-            logger.error(f"Error verificando página de tipos de tarifas: {e}")
             return False
 
     # ===== MÉTODOS GENERALES =====

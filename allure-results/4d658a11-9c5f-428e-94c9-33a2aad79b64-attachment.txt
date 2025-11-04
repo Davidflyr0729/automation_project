@@ -1,0 +1,5 @@
+[1m[31mERROR   [0m pages.home_page:home_page.py:413 ❌ No se encontró enlace de ofertas
+[1m[31mERROR   [0m test_case_6:test_case_6.py:540 ❌ Test 6.4 FALLÓ: No se pudo navegar a Ofertas en español
+assert False
+ +  where False = <bound method HomePage.navigate_to_offers_and_destinations_optimized of <pages.home_page.HomePage object at 0x0000020D93A6D980>>()
+ +    where <bound method HomePage.navigate_to_offers_and_destinations_optimized of <pages.home_page.HomePage object at 0x0000020D93A6D980>> = <pages.home_page.HomePage object at 0x0000020D93A6D980>.navigate_to_offers_and_destinations_optimized - https://nuxqa4.avtest.ink/

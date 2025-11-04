@@ -1,0 +1,1 @@
+//*[contains(@class, 'nav')]//*[contains(text(), 'Check-in')]
