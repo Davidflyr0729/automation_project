@@ -77,6 +77,25 @@ class HomePage(BasePage):
     CHECKIN_PAGE_INDICATOR = (By.XPATH, "//h1[contains(text(), 'Check-in') or contains(text(), 'Check-in')]")
     TARIFF_TYPES_INDICATOR = (By.XPATH, "//h1[contains(text(), 'Tarifas') or contains(text(), 'Fares') or contains(text(), 'Tarifs')]")
 
+    # ===== LOCATORES ACTUALIZADOS PARA CASO 7: REDIRECCIONES FOOTER EN ESPAÑOL =====
+    FOOTER_SECTION = (By.TAG_NAME, "footer")
+    
+    # Enlaces específicos del footer en español (los 4 NUEVOS requeridos) - ACTUALIZADOS CON LA INFORMACIÓN PROPORCIONADA
+    FOOTER_LINK_1 = (By.XPATH, "//footer//li[contains(@class, 'ng-tns-c30-8')]//a[contains(@href, '/es/ofertas-destinos/ofertas-de-vuelos/')]")
+    FOOTER_LINK_2 = (By.XPATH, "//footer//a[contains(text(), 'Somos avianca') or contains(@href, 'somos-avianca')]")
+    FOOTER_LINK_3 = (By.XPATH, "//footer//a[contains(text(), 'aviancadirect') or contains(@href, 'aviancadirect')]")
+    FOOTER_LINK_4 = (By.XPATH, "//footer//a[contains(text(), 'Información legal') or contains(@href, 'legal')]")
+    
+    # Locators alternativos más específicos basados en la estructura HTML proporcionada
+    FOOTER_LINK_1_ALT = (By.CSS_SELECTOR, "footer li.ng-tns-c30-8 a[href*='/es/ofertas-destinos/ofertas-de-vuelos/']")
+    FOOTER_LINK_1_BY_SPAN = (By.XPATH, "//footer//span[contains(@class, 'link-label') and contains(text(), 'Vuelos baratos')]")
+    
+    # Elementos para verificar que las páginas del footer cargaron correctamente
+    FOOTER_PAGE_1_INDICATOR = (By.XPATH, "//h1[contains(text(), 'Vuelos baratos') or contains(text(), 'vuelos')]")
+    FOOTER_PAGE_2_INDICATOR = (By.XPATH, "//h1[contains(text(), 'Somos') or contains(text(), 'avianca')]")
+    FOOTER_PAGE_3_INDICATOR = (By.XPATH, "//h1[contains(text(), 'aviancadirect') or contains(text(), 'direct')]")
+    FOOTER_PAGE_4_INDICATOR = (By.XPATH, "//h1[contains(text(), 'Legal') or contains(text(), 'legal')]")
+
     def __init__(self, driver):
         super().__init__(driver)
         self.wait = WebDriverWait(driver, 10)
@@ -555,7 +574,7 @@ class HomePage(BasePage):
         """Abrir el dropdown de selección de idioma"""
         logger.info("Abriendo dropdown de idioma")
         try:
-            # Intentar diferentes selectores para el botón de idioma
+            # Intentar diferentes selectors para el botón de idioma
             selectors = [
                 self.LANGUAGE_BUTTON,
                 (By.CSS_SELECTOR, "[class*='language'], [class*='idioma']"),
@@ -835,6 +854,198 @@ class HomePage(BasePage):
         except Exception as e:
             logger.error(f"Error verificando POS: {e}")
             return False
+
+    # ===== MÉTODOS ACTUALIZADOS PARA CASO 7: REDIRECCIONES FOOTER EN ESPAÑOL =====
+
+    def is_footer_visible(self):
+        """Verificar que el footer está visible"""
+        logger.info("Verificando visibilidad del footer")
+        try:
+            footer = self.wait.until(EC.visibility_of_element_located(self.FOOTER_SECTION))
+            logger.info("✅ Footer visible")
+            return True
+        except Exception as e:
+            logger.error(f"❌ Footer no visible: {e}")
+            return False
+
+    def debug_footer_links(self):
+        """Método de diagnóstico para encontrar todos los enlaces del footer"""
+        logger.info("🔍 DEBUG: Buscando todos los enlaces del footer...")
+        
+        try:
+            # Asegurarse de que el footer esté visible
+            self.is_footer_visible()
+            
+            # Buscar todos los enlaces en el footer
+            footer_links = self.driver.find_elements(By.XPATH, "//footer//a")
+            logger.info(f"🔍 Enlaces encontrados en el footer: {len(footer_links)}")
+            
+            all_links = []
+            for i, link in enumerate(footer_links):
+                try:
+                    href = link.get_attribute('href') or 'No href'
+                    text = link.text.strip() or 'No text'
+                    visible = link.is_displayed()
+                    enabled = link.is_enabled()
+                    
+                    link_info = {
+                        'index': i,
+                        'href': href,
+                        'text': text,
+                        'visible': visible,
+                        'enabled': enabled,
+                        'element': link
+                    }
+                    
+                    all_links.append(link_info)
+                    
+                    logger.info(f"  {i+1}. Text: '{text}'")
+                    logger.info(f"     Href: {href}")
+                    logger.info(f"     Visible: {visible}, Enabled: {enabled}")
+                    
+                except Exception as e:
+                    logger.debug(f"Error procesando enlace {i}: {e}")
+                    continue
+            
+            return all_links
+            
+        except Exception as e:
+            logger.error(f"❌ Error en debug_footer_links: {e}")
+            return []
+
+    def navigate_to_footer_link(self, link_locator, expected_url_keyword, verification_locator=None, alternative_locators=None):
+        """Navegar a un enlace específico del footer y verificar la redirección"""
+        logger.info(f"Navegando a enlace del footer: {link_locator}")
+        
+        initial_url = self.get_page_url()
+        
+        try:
+            # Scroll al footer primero
+            self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+            time.sleep(1)
+            
+            # Intentar diferentes locators si se proporcionan alternativas
+            locators_to_try = [link_locator]
+            if alternative_locators:
+                locators_to_try.extend(alternative_locators)
+            
+            link = None
+            for locator in locators_to_try:
+                try:
+                    link = self.wait.until(EC.element_to_be_clickable(locator))
+                    logger.info(f"✅ Enlace encontrado con locator: {locator}")
+                    break
+                except:
+                    continue
+            
+            if not link:
+                logger.error("❌ No se pudo encontrar el enlace con ningún locator")
+                return False
+            
+            href = link.get_attribute('href')
+            text = link.text.strip()
+            
+            logger.info(f"🖱️ Haciendo click en: '{text}' -> {href}")
+            
+            # Intentar click con diferentes estrategias
+            max_attempts = 3
+            for attempt in range(max_attempts):
+                try:
+                    link.click()
+                    break
+                except:
+                    if attempt == max_attempts - 1:
+                        self.driver.execute_script("arguments[0].click();", link)
+                    else:
+                        time.sleep(0.5)
+                        continue
+
+            # Esperar cambio de URL
+            WebDriverWait(self.driver, 8).until(
+                lambda driver: driver.current_url != initial_url
+            )
+            
+            # Verificar que llegamos a la URL correcta
+            current_url = self.get_page_url()
+            if expected_url_keyword.lower() in current_url.lower():
+                logger.info(f"✅ Redirección exitosa: {current_url}")
+                
+                # Verificación adicional con elemento específico si se proporciona
+                if verification_locator:
+                    if self.is_element_present(verification_locator):
+                        logger.info("✅ Página cargada correctamente (verificación por elemento)")
+                        return True
+                    else:
+                        logger.warning("⚠️  Redirección exitosa pero no se pudo verificar el elemento específico")
+                        return True
+                else:
+                    return True
+            else:
+                logger.warning(f"⚠️  URL final no contiene la palabra clave esperada: {current_url}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"❌ Error en navegación: {e}")
+            return False
+
+    # Métodos específicos para los 4 NUEVOS enlaces del footer en español - ACTUALIZADOS
+    def navigate_to_footer_link_1(self):
+        """Navegar a 'Vuelos baratos' - ACTUALIZADO con los nuevos locators"""
+        return self.navigate_to_footer_link(
+            self.FOOTER_LINK_1, 
+            'vuelos-baratos', 
+            self.FOOTER_PAGE_1_INDICATOR,
+            alternative_locators=[self.FOOTER_LINK_1_ALT, self.FOOTER_LINK_1_BY_SPAN]
+        )
+
+    def navigate_to_footer_link_2(self):
+        """Navegar a 'Somos avianca'"""
+        return self.navigate_to_footer_link(
+            self.FOOTER_LINK_2,
+            'somos-avianca',
+            self.FOOTER_PAGE_2_INDICATOR
+        )
+
+    def navigate_to_footer_link_3(self):
+        """Navegar a 'aviancadirect'"""
+        return self.navigate_to_footer_link(
+            self.FOOTER_LINK_3,
+            'aviancadirect', 
+            self.FOOTER_PAGE_3_INDICATOR
+        )
+
+    def navigate_to_footer_link_4(self):
+        """Navegar a 'Información legal'"""
+        return self.navigate_to_footer_link(
+            self.FOOTER_LINK_4,
+            'legal',
+            self.FOOTER_PAGE_4_INDICATOR
+        )
+
+    def verify_url_contains_language_context(self, expected_language):
+        """Verificar que la URL contiene el contexto del idioma seleccionado"""
+        current_url = self.get_page_url().lower()
+        
+        # Solo verificamos si la URL contiene el código de idioma
+        language_codes = {
+            'español': '/es/',
+            'english': '/en/', 
+            'français': '/fr/',
+            'português': '/pt/'
+        }
+        
+        if expected_language.lower() in language_codes:
+            expected_code = language_codes[expected_language.lower()]
+            if expected_code in current_url:
+                logger.info(f"✅ URL contiene contexto de idioma: {expected_language} ({expected_code})")
+                return True
+            else:
+                logger.warning(f"⚠️  URL no contiene contexto de idioma esperado: {expected_language}")
+                logger.info(f"   URL actual: {current_url}")
+                return False
+        
+        logger.warning(f"⚠️  Idioma no reconocido: {expected_language}")
+        return False
 
     # ===== MÉTODOS GENERALES =====
     

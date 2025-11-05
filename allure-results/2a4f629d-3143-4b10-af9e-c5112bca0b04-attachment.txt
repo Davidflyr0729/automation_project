@@ -1,0 +1,1 @@
+[1m[31mERROR   [0m test_case_7:test_case_7.py:66 ❌ No se pudo encontrar el enlace 'Vuelos baratos': 'HomePage' object has no attribute 'FOOTER_LINK_1_ALT'

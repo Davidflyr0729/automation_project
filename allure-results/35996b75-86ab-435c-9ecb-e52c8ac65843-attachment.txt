@@ -1,0 +1,1 @@
+[33mWARNING [0m test_case_7:test_case_7.py:103 ⚠️  URL no contiene 'vuelos-baratos': https://nuxqa4.avtest.ink/es/ofertas-destinos/ofertas-de-vuelos/
