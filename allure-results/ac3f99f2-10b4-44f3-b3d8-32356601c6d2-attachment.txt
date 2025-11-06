@@ -1,1 +1,0 @@
-{'url': 'https://nuxqa4.avtest.ink/pt/', 'title': 'avianca - Encontrar passagens e voos baratos | Web Oficial', 'window_size': {'width': 1382, 'height': 736}, 'page_height': 3268, 'viewport_height': 641}

@@ -1,1 +1,0 @@
-{'url': 'https://nuxqa5.avtest.ink/es/', 'title': 'avianca - Encuentra tiquetes y vuelos baratos | Web oficial', 'window_size': {'width': 1382, 'height': 736}, 'page_height': 3517, 'viewport_height': 641}

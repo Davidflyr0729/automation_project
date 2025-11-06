@@ -1,5 +1,0 @@
-
-🚀 Iniciando CHROME (headless: False) - MODO DESKTOP
-✅ Usando ChromeDriver manual: C:\Users\DavidGalvezRestrepo\DATOS\DAVID\EXAMEN\project\drivers\chromedriver.exe
-✅ CHROME inicializado correctamente en modo DESKTOP
-🔴 Cerrando navegador

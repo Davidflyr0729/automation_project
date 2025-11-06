@@ -1,7 +1,0 @@
-
-🚀 Iniciando Chrome (headless: False)
-✅ Usando ChromeDriver manual: C:\Users\DavidGalvezRestrepo\DATOS\DAVID\EXAMEN\project\drivers\chromedriver.exe
-✅ Chrome inicializado correctamente
-🎥 Iniciando grabación de video REAL: videos/test_navigate_to_info_and_help_tariffs[firefox-https://nuxqa5.avtest.ink/]_nuxqa5_chrome_20251031_071249.mp4
-⚠️  No hay grabación activa para detener
-🔴 Cerrando Chrome

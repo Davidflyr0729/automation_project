@@ -1,1 +1,0 @@
-//*[contains(@class, 'nav')]//*[contains(text(), 'Ofertas y destinos')]

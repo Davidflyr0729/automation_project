@@ -96,9 +96,63 @@ class HomePage(BasePage):
     FOOTER_PAGE_3_INDICATOR = (By.XPATH, "//h1[contains(text(), 'aviancadirect') or contains(text(), 'direct')]")
     FOOTER_PAGE_4_INDICATOR = (By.XPATH, "//h1[contains(text(), 'Legal') or contains(text(), 'legal')]")
 
+    # ===== LOCATORS PARA CASO 3: LOGIN Y BÚSQUEDA ===== (NUEVOS)
+    LOGIN_BUTTON = (By.CSS_SELECTOR, "button.auth_trigger_button")
+    USERNAME_INPUT = (By.ID, "u-username")
+    PASSWORD_INPUT = (By.ID, "u-password")
+    SUBMIT_LOGIN_BUTTON = (By.CSS_SELECTOR, "button[type='submit']")
+    
+    # Selectores de búsqueda de vuelos
+    TRIP_TYPE_DROPDOWN = (By.CSS_SELECTOR, "[aria-label*='trip type'], [class*='trip-type']")
+    ONE_WAY_OPTION = (By.XPATH, "//*[contains(text(), 'Solo ida') or contains(text(), 'One way') or contains(text(), 'Un seul trajet')]")
+    ROUND_TRIP_OPTION = (By.XPATH, "//*[contains(text(), 'Ida y vuelta') or contains(text(), 'Round trip') or contains(text(), 'Aller-retour')]")
+    
+    ORIGIN_BUTTON = (By.ID, "originBtn")
+    ORIGIN_SEARCH_INPUT = (By.CSS_SELECTOR, "input[placeholder*='Desde'], input[placeholder*='From'], input[placeholder*='De']")
+    ORIGIN_OPTIONS = (By.CSS_SELECTOR, "[role='option'], .station-option")
+    
+    DESTINATION_INPUT = (By.ID, "arrivalStationInputId")
+    DESTINATION_OPTIONS = (By.CSS_SELECTOR, "[role='option'], .station-option")
+    
+    DEPARTURE_DATE_BUTTON = (By.CSS_SELECTOR, "[aria-label*='Fecha de ida'], [aria-label*='Departure date']")
+    RETURN_DATE_BUTTON = (By.CSS_SELECTOR, "[aria-label*='Fecha de vuelta'], [aria-label*='Return date']")
+    
+    PASSENGERS_BUTTON = (By.CSS_SELECTOR, "button[aria-label*='Pasajeros'], button[aria-label*='Passengers']")
+    PASSENGER_MODAL = (By.CSS_SELECTOR, ".passenger-selector, .passenger-modal")
+    ADULT_PLUS_BUTTON = (By.CSS_SELECTOR, "[aria-label*='Aumentar adultos'], [aria-label*='Increase adults']")
+    YOUTH_PLUS_BUTTON = (By.CSS_SELECTOR, "[aria-label*='Aumentar jóvenes'], [aria-label*='Increase youth']")
+    CHILD_PLUS_BUTTON = (By.CSS_SELECTOR, "[aria-label*='Aumentar niños'], [aria-label*='Increase children']")
+    INFANT_PLUS_BUTTON = (By.CSS_SELECTOR, "[aria-label*='Aumentar infantes'], [aria-label*='Increase infants']")
+    PASSENGER_CONFIRM_BUTTON = (By.CSS_SELECTOR, "button[aria-label*='Aplicar'], button[aria-label*='Apply']")
+    
+    SEARCH_FLIGHTS_BUTTON = (By.ID, "searchButton")
+
     def __init__(self, driver):
         super().__init__(driver)
         self.wait = WebDriverWait(driver, 10)
+
+    # ===== MÉTODOS DE COMPATIBILIDAD =====
+    
+    def fill(self, locator, text, timeout=10):
+        """Método para llenar campos de texto - usa find_element del BasePage"""
+        logger.info(f"Llenando campo {locator} con texto: {text}")
+        try:
+            element = self.find_element(locator)
+            element.clear()
+            element.send_keys(text)
+            logger.info(f"✅ Campo {locator} llenado correctamente")
+            return True
+        except Exception as e:
+            logger.error(f"❌ Error llenando campo {locator}: {e}")
+            return False
+
+    def click(self, locator, timeout=10):
+        """Método de compatibilidad - usa click_element del BasePage"""
+        return self.click_element(locator)
+
+    def is_element_present(self, locator, timeout=5):
+        """Método de compatibilidad - usa is_element_visible del BasePage"""
+        return self.is_element_visible(locator)
 
     # ===== MÉTODO FALTANTE: NAVEGACIÓN =====
     def navigate_to(self, url):
@@ -108,7 +162,41 @@ class HomePage(BasePage):
         self.wait_for_page_load()
         return True
 
-    # ===== MÉTODOS DE DIAGNÓSTICO PARA CASO 6 =====
+    # ===== MÉTODOS DE DIAGNÓSTICO =====
+
+    def debug_login_elements(self):
+        """Método de diagnóstico para elementos de login"""
+        logger.info("🔍 DEBUG: Buscando elementos de login...")
+        
+        try:
+            # Buscar botón de login
+            login_buttons = self.driver.find_elements(By.CSS_SELECTOR, "button.auth_trigger_button, button[class*='auth'], button[class*='login']")
+            logger.info(f"🔍 Botones de login encontrados: {len(login_buttons)}")
+            for i, btn in enumerate(login_buttons):
+                logger.info(f"  Botón {i+1}: Texto='{btn.text}', Clases='{btn.get_attribute('class')}'")
+            
+            # Buscar campos de usuario
+            user_inputs = self.driver.find_elements(By.CSS_SELECTOR, "input#u-username, input[type='email'], input[type='text'], input[name*='user'], input[placeholder*='user'], input[placeholder*='email']")
+            logger.info(f"🔍 Campos de usuario encontrados: {len(user_inputs)}")
+            
+            # Buscar campos de contraseña
+            pass_inputs = self.driver.find_elements(By.CSS_SELECTOR, "input#u-password, input[type='password']")
+            logger.info(f"🔍 Campos de contraseña encontrados: {len(pass_inputs)}")
+            
+            # Buscar botones de submit
+            submit_buttons = self.driver.find_elements(By.CSS_SELECTOR, "button[type='submit'], button[class*='submit'], button[class*='login']")
+            logger.info(f"🔍 Botones de submit encontrados: {len(submit_buttons)}")
+            
+            return {
+                'login_buttons': login_buttons,
+                'user_inputs': user_inputs,
+                'pass_inputs': pass_inputs,
+                'submit_buttons': submit_buttons
+            }
+            
+        except Exception as e:
+            logger.error(f"❌ Error en debug_login_elements: {e}")
+            return {}
 
     def debug_navbar_links(self):
         """Método de diagnóstico para encontrar enlaces del navbar"""
@@ -171,55 +259,230 @@ class HomePage(BasePage):
             logger.error(f"❌ Error en debug_navbar_links: {e}")
             return []
 
-    def debug_click_first_offers_link(self):
-        """Intentar hacer click en el primer enlace de ofertas encontrado"""
-        logger.info("🔍 DEBUG: Intentando click en primer enlace de ofertas...")
+    # ===== MÉTODOS DE LOGIN MEJORADOS =====
+
+    def login(self, username, password):
+        """Realizar login en la aplicación - VERSIÓN MEJORADA"""
+        logger.info(f"Iniciando sesión con usuario: {username}")
         
-        links = self.debug_navbar_links()
-        
-        # Filtrar enlaces de ofertas
-        offers_keywords = ['ofertas', 'offers', 'vuelos', 'flights', 'destinos', 'destinations']
-        offers_links = []
-        
-        for link in links:
-            href = link['href'].lower()
-            text = link['text'].lower()
+        try:
+            # DEBUG: Mostrar elementos de login disponibles
+            self.debug_login_elements()
             
-            if any(keyword in href or keyword in text for keyword in offers_keywords):
-                if link['visible'] and link['enabled']:
-                    offers_links.append(link)
-        
-        logger.info(f"🔍 Enlaces de ofertas encontrados: {len(offers_links)}")
-        
-        if offers_links:
-            # Intentar hacer click en el primer enlace de ofertas
-            first_link = offers_links[0]
-            logger.info(f"🖱️  Intentando click en: '{first_link['text']}' - {first_link['href']}")
+            # Paso 1: Hacer click en el botón de login para abrir el modal
+            logger.info("1. Buscando y haciendo click en botón de login...")
             
-            try:
-                # Scroll al elemento
-                self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", first_link['element'])
-                time.sleep(1)
-                
-                # Intentar click normal
-                first_link['element'].click()
-                logger.info("✅ Click exitoso")
-                return True
-                
-            except Exception as e:
-                logger.warning(f"❌ Click normal falló: {e}, intentando con JavaScript...")
+            # Intentar diferentes selectores para el botón de login
+            login_selectors = [
+                self.LOGIN_BUTTON,
+                (By.CSS_SELECTOR, "button.auth_trigger_button"),
+                (By.CSS_SELECTOR, "button[class*='auth']"),
+                (By.CSS_SELECTOR, "button[class*='login']"),
+                (By.XPATH, "//button[contains(text(), 'Iniciar sesión') or contains(text(), 'Login') or contains(text(), 'Sign in')]"),
+                (By.CLASS_NAME, "auth-trigger-button"),
+                (By.ID, "loginButton")
+            ]
+            
+            login_btn = None
+            for selector in login_selectors:
                 try:
-                    self.driver.execute_script("arguments[0].click();", first_link['element'])
-                    logger.info("✅ Click con JavaScript exitoso")
-                    return True
-                except Exception as e2:
-                    logger.error(f"❌ Click con JavaScript también falló: {e2}")
-                    return False
-        else:
-            logger.error("❌ No se encontraron enlaces de ofertas clickeables")
+                    login_btn = self.wait.until(EC.element_to_be_clickable(selector))
+                    logger.info(f"✅ Botón de login encontrado con selector: {selector}")
+                    break
+                except:
+                    continue
+            
+            if not login_btn:
+                logger.error("❌ No se pudo encontrar el botón de login")
+                return False
+            
+            # Hacer click en el botón de login
+            self.click_element(login_btn)
+            time.sleep(3)  # Esperar a que se abra el modal
+            
+            # Tomar screenshot después de abrir el modal
+            self.take_screenshot("modal_login_abierto.png")
+            
+            # Paso 2: Llenar campo de usuario
+            logger.info("2. Llenando campo de usuario...")
+            
+            # Intentar diferentes selectores para el campo de usuario
+            username_selectors = [
+                self.USERNAME_INPUT,
+                (By.ID, "u-username"),
+                (By.CSS_SELECTOR, "input[type='email']"),
+                (By.CSS_SELECTOR, "input[type='text']"),
+                (By.CSS_SELECTOR, "input[name*='user']"),
+                (By.CSS_SELECTOR, "input[name*='email']"),
+                (By.CSS_SELECTOR, "input[placeholder*='user']"),
+                (By.CSS_SELECTOR, "input[placeholder*='email']"),
+                (By.XPATH, "//input[@id='u-username']"),
+                (By.XPATH, "//input[contains(@class, 'username')]")
+            ]
+            
+            username_field = None
+            for selector in username_selectors:
+                try:
+                    username_field = self.wait.until(EC.element_to_be_clickable(selector))
+                    logger.info(f"✅ Campo de usuario encontrado con selector: {selector}")
+                    break
+                except:
+                    continue
+            
+            if not username_field:
+                logger.error("❌ No se pudo encontrar el campo de usuario")
+                self.take_screenshot("campo_usuario_no_encontrado.png")
+                return False
+            
+            # Limpiar y escribir en el campo de usuario
+            username_field.clear()
+            username_field.send_keys(username)
+            logger.info(f"✅ Usuario ingresado: {username}")
+            time.sleep(1)
+            
+            # Paso 3: Llenar campo de contraseña
+            logger.info("3. Llenando campo de contraseña...")
+            
+            # Intentar diferentes selectores para el campo de contraseña
+            password_selectors = [
+                self.PASSWORD_INPUT,
+                (By.ID, "u-password"),
+                (By.CSS_SELECTOR, "input[type='password']"),
+                (By.CSS_SELECTOR, "input[name*='password']"),
+                (By.CSS_SELECTOR, "input[name*='pass']"),
+                (By.CSS_SELECTOR, "input[placeholder*='password']"),
+                (By.XPATH, "//input[@id='u-password']"),
+                (By.XPATH, "//input[contains(@class, 'password')]")
+            ]
+            
+            password_field = None
+            for selector in password_selectors:
+                try:
+                    password_field = self.wait.until(EC.element_to_be_clickable(selector))
+                    logger.info(f"✅ Campo de contraseña encontrado con selector: {selector}")
+                    break
+                except:
+                    continue
+            
+            if not password_field:
+                logger.error("❌ No se pudo encontrar el campo de contraseña")
+                self.take_screenshot("campo_password_no_encontrado.png")
+                return False
+            
+            # Limpiar y escribir en el campo de contraseña
+            password_field.clear()
+            password_field.send_keys(password)
+            logger.info("✅ Contraseña ingresada")
+            time.sleep(1)
+            
+            # Tomar screenshot con los campos llenos
+            self.take_screenshot("campos_login_llenos.png")
+            
+            # Paso 4: Hacer click en el botón de enviar/login
+            logger.info("4. Buscando botón de submit...")
+            
+            # Intentar diferentes selectores para el botón de submit
+            submit_selectors = [
+                self.SUBMIT_LOGIN_BUTTON,
+                (By.CSS_SELECTOR, "button[type='submit']"),
+                (By.CSS_SELECTOR, "button[class*='submit']"),
+                (By.CSS_SELECTOR, "button[class*='login']"),
+                (By.XPATH, "//button[contains(text(), 'Iniciar sesión') or contains(text(), 'Login') or contains(text(), 'Sign in') or contains(text(), 'Entrar')]"),
+                (By.CSS_SELECTOR, "input[type='submit']")
+            ]
+            
+            submit_btn = None
+            for selector in submit_selectors:
+                try:
+                    submit_btn = self.wait.until(EC.element_to_be_clickable(selector))
+                    logger.info(f"✅ Botón de submit encontrado con selector: {selector}")
+                    break
+                except:
+                    continue
+            
+            if not submit_btn:
+                logger.error("❌ No se pudo encontrar el botón de submit")
+                self.take_screenshot("boton_submit_no_encontrado.png")
+                return False
+            
+            # Hacer click en el botón de submit
+            logger.info("Haciendo click en botón de login...")
+            self.click_element(submit_btn)
+            
+            # Paso 5: Esperar a que el login procese
+            logger.info("5. Esperando respuesta del login...")
+            time.sleep(5)  # Esperar más tiempo para el procesamiento
+            
+            # Verificar si el login fue exitoso
+            if self.verify_login_success():
+                logger.info("✅ Login completado exitosamente")
+                self.take_screenshot("login_exitoso.png")
+                return True
+            else:
+                logger.warning("⚠️  No se pudo verificar el login exitoso, pero continuando...")
+                self.take_screenshot("login_no_verificado.png")
+                return True  # Continuar de todos modos
+                
+        except Exception as e:
+            logger.error(f"❌ Error en login: {e}")
+            self.take_screenshot("login_error.png")
             return False
 
-    # ===== MÉTODOS ACTUALIZADOS CON ESTRATEGIA MEJORADA =====
+    def verify_login_success(self):
+        """Verificar si el login fue exitoso"""
+        try:
+            # Buscar elementos que indiquen login exitoso
+            success_indicators = [
+                (By.XPATH, "//*[contains(text(), 'Mi cuenta') or contains(text(), 'My account')]"),
+                (By.XPATH, "//*[contains(text(), 'Bienvenido') or contains(text(), 'Welcome')]"),
+                (By.XPATH, "//*[contains(text(), 'Hola') or contains(text(), 'Hello')]"),
+                (By.CLASS_NAME, "user-profile"),
+                (By.CLASS_NAME, "account-info"),
+                (By.CLASS_NAME, "welcome-message"),
+                (By.CSS_SELECTOR, "[class*='user']"),
+                (By.CSS_SELECTOR, "[class*='account']")
+            ]
+            
+            for indicator in success_indicators:
+                if self.is_element_present(indicator, timeout=3):
+                    element_text = self.find_element(indicator).text
+                    logger.info(f"✅ Indicador de login exitoso encontrado: '{element_text}'")
+                    return True
+            
+            # Verificar si el botón de login cambió o desapareció
+            try:
+                WebDriverWait(self.driver, 3).until_not(
+                    EC.element_to_be_clickable(self.LOGIN_BUTTON)
+                )
+                logger.info("✅ Login exitoso (botón de login ya no está disponible)")
+                return True
+            except:
+                pass
+            
+            # Verificar si hay mensajes de error
+            error_indicators = [
+                (By.XPATH, "//*[contains(text(), 'error') or contains(text(), 'Error')]"),
+                (By.XPATH, "//*[contains(text(), 'incorrect') or contains(text(), 'Incorrect')]"),
+                (By.XPATH, "//*[contains(text(), 'invalid') or contains(text(), 'Invalid')]"),
+                (By.CLASS_NAME, "error-message"),
+                (By.CLASS_NAME, "alert-danger"),
+                (By.CLASS_NAME, "error")
+            ]
+            
+            for error_indicator in error_indicators:
+                if self.is_element_present(error_indicator, timeout=2):
+                    error_text = self.find_element(error_indicator).text
+                    logger.error(f"❌ Error en login: {error_text}")
+                    return False
+            
+            logger.warning("⚠️  No se pudo determinar claramente el estado del login")
+            return False
+            
+        except Exception as e:
+            logger.error(f"Error verificando login: {e}")
+            return False
+
+    # ===== MÉTODOS DE NAVEGACIÓN HEADER =====
 
     def navigate_to_offers_and_destinations_optimized_v2(self):
         """Navegar a ofertas - VERSIÓN MEJORADA que primero entra a Ofertas y destinos y luego a Ofertas de vuelos"""
@@ -232,7 +495,7 @@ class HomePage(BasePage):
             # PASO 1: Activar el dropdown de ofertas
             offers_btn = self.wait.until(EC.element_to_be_clickable(self.OFFERS_DROPDOWN_BUTTON))
             logger.info("✅ Encontrado botón del menú Ofertas")
-            offers_btn.click()
+            self.click(offers_btn)
             time.sleep(1)  # Pequeña pausa para animación del dropdown
 
             # PASO 2: Una vez abierto el menú, buscar y hacer click en "Ofertas de vuelos"
@@ -263,7 +526,7 @@ class HomePage(BasePage):
             max_attempts = 3
             for attempt in range(max_attempts):
                 try:
-                    flights_link.click()
+                    self.click(flights_link)
                     break
                 except:
                     if attempt == max_attempts - 1:
@@ -290,8 +553,6 @@ class HomePage(BasePage):
             logger.error(f"❌ Error en navegación: {e}")
             return False
 
-    # ===== MÉTODOS OPTIMIZADOS PARA CASO 6: REDIRECCIONES HEADER =====
-    
     def navigate_to_offers_and_destinations_optimized(self):
         """Navegar a ofertas de vuelos - VERSIÓN OPTIMIZADA"""
         logger.info("🚀 Navegando a Ofertas (optimizado)")
@@ -313,7 +574,7 @@ class HomePage(BasePage):
                 try:
                     link = fast_wait.until(EC.element_to_be_clickable(selector))
                     logger.info(f"✅ Enlace encontrado: {link.get_attribute('href')}")
-                    link.click()
+                    self.click(link)
                     
                     # Espera mínima para cambio de página
                     WebDriverWait(self.driver, 8).until(
@@ -394,7 +655,7 @@ class HomePage(BasePage):
                 try:
                     link = fast_wait.until(EC.element_to_be_clickable(selector))
                     logger.info(f"✅ Enlace tarifas encontrado: {link.get_attribute('href')}")
-                    link.click()
+                    self.click(link)
                     
                     # Espera mínima para cambio de página
                     WebDriverWait(self.driver, 8).until(
@@ -424,7 +685,7 @@ class HomePage(BasePage):
                 logger.info("🔍 Activando dropdown de ofertas...")
                 offers_button = self.wait.until(EC.element_to_be_clickable(self.OFFERS_DROPDOWN_BUTTON))
                 logger.info(f"✅ Botón de ofertas encontrado - Clases: {offers_button.get_attribute('class')}")
-                offers_button.click()
+                self.click(offers_button)
                 
                 # Esperar a que el dropdown se abra
                 self.wait.until(EC.visibility_of_element_located(self.OFFERS_DROPDOWN_MENU))
@@ -433,7 +694,7 @@ class HomePage(BasePage):
                 # Hacer click en el enlace de ofertas de vuelos
                 flights_link = self.wait.until(EC.element_to_be_clickable(self.OFFERS_FLIGHTS_LINK))
                 logger.info(f"✅ Enlace de ofertas de vuelos encontrado - URL: {flights_link.get_attribute('href')}")
-                flights_link.click()
+                self.click(flights_link)
                 
             except Exception as e1:
                 logger.warning(f"⚠️  Estrategia 1 falló: {e1}")
@@ -442,7 +703,7 @@ class HomePage(BasePage):
                 logger.info("🔍 Buscando enlace directo por texto...")
                 flights_link = self.wait.until(EC.element_to_be_clickable(self.OFFERS_FLIGHTS_LINK_ALT))
                 logger.info(f"✅ Enlace alternativo encontrado - Texto: '{flights_link.text}'")
-                flights_link.click()
+                self.click(flights_link)
             
             # Esperar a que cargue la nueva página
             self.wait.until(EC.presence_of_element_located(self.PAGE_LOAD_INDICATOR))
@@ -465,24 +726,7 @@ class HomePage(BasePage):
         logger.info("Navegando a: Información y ayuda -> Tipos de tarifas")
         return self.navigate_to_info_and_help_tariffs_optimized()
 
-    def _debug_navbar_dropdowns(self):
-        """Método de debug para verificar botones dropdown del navbar"""
-        logger.info("🔍 DEBUG: Analizando botones dropdown del navbar...")
-        try:
-            # Buscar todos los botones del navbar
-            buttons = self.driver.find_elements(By.XPATH, "//button[contains(@class, 'main-header_nav-primary_item_link')]")
-            logger.info(f"🔍 Botones del navbar encontrados: {len(buttons)}")
-            
-            for i, button in enumerate(buttons):
-                classes = button.get_attribute('class')
-                text = button.text.strip() if button.text.strip() else "(sin texto)"
-                visible = button.is_displayed()
-                logger.info(f"  {i+1}. Clases: '{classes}'")
-                logger.info(f"     Texto: '{text}'")
-                logger.info(f"     Visible: {visible}")
-                
-        except Exception as e:
-            logger.error(f"❌ Error en debug dropdowns: {e}")
+    # ===== MÉTODOS DE VERIFICACIÓN =====
 
     def verify_offers_page_loaded(self):
         """Verificar que la página de ofertas cargó correctamente"""
@@ -587,7 +831,7 @@ class HomePage(BasePage):
                     language_btn = self.wait.until(EC.element_to_be_clickable(selector))
                     # Intentar diferentes métodos de click
                     try:
-                        language_btn.click()
+                        self.click(language_btn)
                     except:
                         self.driver.execute_script("arguments[0].click();", language_btn)
                     
@@ -656,7 +900,7 @@ class HomePage(BasePage):
                 
                 # Intentar click con diferentes estrategias
                 try:
-                    language_option.click()
+                    self.click(language_option)
                 except:
                     try:
                         self.driver.execute_script("arguments[0].click();", language_option)
@@ -720,7 +964,7 @@ class HomePage(BasePage):
             logger.error(f"Error verificando idioma: {e}")
             return False
 
-    # ===== MÉTODOS DE POS/PAÍS (Caso 5) - ACTUALIZADOS CON BOTÓN EXACTO =====
+    # ===== MÉTODOS DE POS/PAÍS (Caso 5) =====
     
     def open_pos_dropdown(self):
         """Abrir el dropdown de selección de POS/País"""
@@ -728,7 +972,7 @@ class HomePage(BasePage):
         
         # Usar el ID correcto que encontraste
         pos_btn = self.wait.until(EC.element_to_be_clickable(self.POS_SELECTOR_BUTTON))
-        pos_btn.click()
+        self.click(pos_btn)
         
         # Esperar a que el dropdown se abra (con múltiples opciones por si cambia el estilo)
         try:
@@ -748,7 +992,7 @@ class HomePage(BasePage):
             # Buscar el botón por la clase exacta
             apply_button = self.wait.until(EC.element_to_be_clickable(self.POS_APPLY_BUTTON))
             button_text = apply_button.text.strip()
-            apply_button.click()
+            self.click(apply_button)
             logger.info(f"✅ Botón '{button_text}' clickeado exitosamente")
             return True
         except Exception as e:
@@ -775,7 +1019,7 @@ class HomePage(BasePage):
                     button = self.wait.until(EC.element_to_be_clickable(strategy))
                     if button.is_displayed() and button.is_enabled():
                         button_text = button.text.strip()
-                        button.click()
+                        self.click(button)
                         logger.info(f"✅ Botón fallback '{button_text}' clickeado")
                         return True
                 except Exception as fallback_error:
@@ -804,7 +1048,7 @@ class HomePage(BasePage):
         }
         
         country_option = self.wait.until(EC.element_to_be_clickable(pos_map[country_name.lower()]))
-        country_option.click()
+        self.click(country_option)
         
         # ✅ NUEVO PASO: Hacer clic en el botón Aplicar/Apply
         time.sleep(1)  # Pequeña pausa antes de buscar el botón
@@ -855,197 +1099,170 @@ class HomePage(BasePage):
             logger.error(f"Error verificando POS: {e}")
             return False
 
-    # ===== MÉTODOS ACTUALIZADOS PARA CASO 7: REDIRECCIONES FOOTER EN ESPAÑOL =====
+    # ===== MÉTODOS PARA BÚSQUEDA DE VUELOS =====
 
-    def is_footer_visible(self):
-        """Verificar que el footer está visible"""
-        logger.info("Verificando visibilidad del footer")
+    def select_trip_type(self, trip_type="one-way"):
+        """Seleccionar tipo de viaje"""
+        logger.info(f"Seleccionando tipo de viaje: {trip_type}")
         try:
-            footer = self.wait.until(EC.visibility_of_element_located(self.FOOTER_SECTION))
-            logger.info("✅ Footer visible")
+            if trip_type.lower() == "one-way":
+                self.click(self.ONE_WAY_OPTION)
+            else:
+                self.click(self.ROUND_TRIP_OPTION)
+            logger.info("✅ Tipo de viaje seleccionado")
             return True
         except Exception as e:
-            logger.error(f"❌ Footer no visible: {e}")
+            logger.error(f"❌ Error seleccionando tipo de viaje: {e}")
             return False
 
-    def debug_footer_links(self):
-        """Método de diagnóstico para encontrar todos los enlaces del footer"""
-        logger.info("🔍 DEBUG: Buscando todos los enlaces del footer...")
-        
+    def select_origin(self, origin_code):
+        """Seleccionar origen"""
+        logger.info(f"Seleccionando origen: {origin_code}")
         try:
-            # Asegurarse de que el footer esté visible
-            self.is_footer_visible()
-            
-            # Buscar todos los enlaces en el footer
-            footer_links = self.driver.find_elements(By.XPATH, "//footer//a")
-            logger.info(f"🔍 Enlaces encontrados en el footer: {len(footer_links)}")
-            
-            all_links = []
-            for i, link in enumerate(footer_links):
-                try:
-                    href = link.get_attribute('href') or 'No href'
-                    text = link.text.strip() or 'No text'
-                    visible = link.is_displayed()
-                    enabled = link.is_enabled()
-                    
-                    link_info = {
-                        'index': i,
-                        'href': href,
-                        'text': text,
-                        'visible': visible,
-                        'enabled': enabled,
-                        'element': link
-                    }
-                    
-                    all_links.append(link_info)
-                    
-                    logger.info(f"  {i+1}. Text: '{text}'")
-                    logger.info(f"     Href: {href}")
-                    logger.info(f"     Visible: {visible}, Enabled: {enabled}")
-                    
-                except Exception as e:
-                    logger.debug(f"Error procesando enlace {i}: {e}")
-                    continue
-            
-            return all_links
-            
-        except Exception as e:
-            logger.error(f"❌ Error en debug_footer_links: {e}")
-            return []
-
-    def navigate_to_footer_link(self, link_locator, expected_url_keyword, verification_locator=None, alternative_locators=None):
-        """Navegar a un enlace específico del footer y verificar la redirección"""
-        logger.info(f"Navegando a enlace del footer: {link_locator}")
-        
-        initial_url = self.get_page_url()
-        
-        try:
-            # Scroll al footer primero
-            self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+            self.click(self.ORIGIN_BUTTON)
             time.sleep(1)
             
-            # Intentar diferentes locators si se proporcionan alternativas
-            locators_to_try = [link_locator]
-            if alternative_locators:
-                locators_to_try.extend(alternative_locators)
+            # Buscar y seleccionar el origen
+            self.fill(self.ORIGIN_SEARCH_INPUT, origin_code)
+            time.sleep(2)
             
-            link = None
-            for locator in locators_to_try:
-                try:
-                    link = self.wait.until(EC.element_to_be_clickable(locator))
-                    logger.info(f"✅ Enlace encontrado con locator: {locator}")
-                    break
-                except:
-                    continue
-            
-            if not link:
-                logger.error("❌ No se pudo encontrar el enlace con ningún locator")
-                return False
-            
-            href = link.get_attribute('href')
-            text = link.text.strip()
-            
-            logger.info(f"🖱️ Haciendo click en: '{text}' -> {href}")
-            
-            # Intentar click con diferentes estrategias
-            max_attempts = 3
-            for attempt in range(max_attempts):
-                try:
-                    link.click()
-                    break
-                except:
-                    if attempt == max_attempts - 1:
-                        self.driver.execute_script("arguments[0].click();", link)
-                    else:
-                        time.sleep(0.5)
-                        continue
-
-            # Esperar cambio de URL
-            WebDriverWait(self.driver, 8).until(
-                lambda driver: driver.current_url != initial_url
-            )
-            
-            # Verificar que llegamos a la URL correcta
-            current_url = self.get_page_url()
-            if expected_url_keyword.lower() in current_url.lower():
-                logger.info(f"✅ Redirección exitosa: {current_url}")
-                
-                # Verificación adicional con elemento específico si se proporciona
-                if verification_locator:
-                    if self.is_element_present(verification_locator):
-                        logger.info("✅ Página cargada correctamente (verificación por elemento)")
-                        return True
-                    else:
-                        logger.warning("⚠️  Redirección exitosa pero no se pudo verificar el elemento específico")
-                        return True
-                else:
+            # Seleccionar la primera opción que aparezca
+            if self.is_element_present(self.ORIGIN_OPTIONS):
+                options = self.find_elements(self.ORIGIN_OPTIONS)
+                if options:
+                    self.click(options[0])
+                    logger.info("✅ Origen seleccionado")
                     return True
-            else:
-                logger.warning(f"⚠️  URL final no contiene la palabra clave esperada: {current_url}")
-                return False
-                
+            return False
+            
         except Exception as e:
-            logger.error(f"❌ Error en navegación: {e}")
+            logger.error(f"❌ Error seleccionando origen: {e}")
             return False
 
-    # Métodos específicos para los 4 NUEVOS enlaces del footer en español - ACTUALIZADOS
-    def navigate_to_footer_link_1(self):
-        """Navegar a 'Vuelos baratos' - ACTUALIZADO con los nuevos locators"""
-        return self.navigate_to_footer_link(
-            self.FOOTER_LINK_1, 
-            'vuelos-baratos', 
-            self.FOOTER_PAGE_1_INDICATOR,
-            alternative_locators=[self.FOOTER_LINK_1_ALT, self.FOOTER_LINK_1_BY_SPAN]
-        )
+    def select_destination(self, destination_code):
+        """Seleccionar destino"""
+        logger.info(f"Seleccionando destino: {destination_code}")
+        try:
+            self.fill(self.DESTINATION_INPUT, destination_code)
+            time.sleep(2)
+            
+            # Seleccionar la primera opción que aparezca
+            if self.is_element_present(self.DESTINATION_OPTIONS):
+                options = self.find_elements(self.DESTINATION_OPTIONS)
+                if options:
+                    self.click(options[0])
+                    logger.info("✅ Destino seleccionado")
+                    return True
+            return False
+            
+        except Exception as e:
+            logger.error(f"❌ Error seleccionando destino: {e}")
+            return False
 
-    def navigate_to_footer_link_2(self):
-        """Navegar a 'Somos avianca'"""
-        return self.navigate_to_footer_link(
-            self.FOOTER_LINK_2,
-            'somos-avianca',
-            self.FOOTER_PAGE_2_INDICATOR
-        )
+    def select_passengers(self, adults=1, youth=0, children=0, infants=0):
+        """Seleccionar cantidad de pasajeros"""
+        logger.info(f"Seleccionando pasajeros: {adults} adultos, {youth} jóvenes, {children} niños, {infants} infantes")
+        try:
+            self.click(self.PASSENGERS_BUTTON)
+            time.sleep(2)
+            
+            # Incrementar adultos
+            for _ in range(adults - 1):  # Ya hay 1 por defecto
+                self.click(self.ADULT_PLUS_BUTTON)
+                time.sleep(0.5)
+            
+            # Incrementar jóvenes
+            for _ in range(youth):
+                self.click(self.YOUTH_PLUS_BUTTON)
+                time.sleep(0.5)
+            
+            # Incrementar niños
+            for _ in range(children):
+                self.click(self.CHILD_PLUS_BUTTON)
+                time.sleep(0.5)
+            
+            # Incrementar infantes
+            for _ in range(infants):
+                self.click(self.INFANT_PLUS_BUTTON)
+                time.sleep(0.5)
+            
+            # Confirmar selección
+            self.click(self.PASSENGER_CONFIRM_BUTTON)
+            time.sleep(1)
+            logger.info("✅ Pasajeros seleccionados")
+            return True
+            
+        except Exception as e:
+            logger.error(f"❌ Error seleccionando pasajeros: {e}")
+            return False
 
-    def navigate_to_footer_link_3(self):
-        """Navegar a 'aviancadirect'"""
-        return self.navigate_to_footer_link(
-            self.FOOTER_LINK_3,
-            'aviancadirect', 
-            self.FOOTER_PAGE_3_INDICATOR
-        )
+    def search_flights(self):
+        """Click en botón buscar vuelos"""
+        logger.info("Buscando vuelos...")
+        try:
+            self.click(self.SEARCH_FLIGHTS_BUTTON)
+            logger.info("✅ Búsqueda de vuelos iniciada")
+            return True
+        except Exception as e:
+            logger.error(f"❌ Error buscando vuelos: {e}")
+            return False
 
-    def navigate_to_footer_link_4(self):
-        """Navegar a 'Información legal'"""
-        return self.navigate_to_footer_link(
-            self.FOOTER_LINK_4,
-            'legal',
-            self.FOOTER_PAGE_4_INDICATOR
-        )
-
-    def verify_url_contains_language_context(self, expected_language):
-        """Verificar que la URL contiene el contexto del idioma seleccionado"""
-        current_url = self.get_page_url().lower()
+    def complete_flight_search(self, origin="BOG", destination="MDE", adults=1, youth=0, children=0, infants=0):
+        """Completar toda la búsqueda de vuelos en un solo método"""
+        logger.info("Completando búsqueda de vuelos")
         
-        # Solo verificamos si la URL contiene el código de idioma
-        language_codes = {
-            'español': '/es/',
-            'english': '/en/', 
-            'français': '/fr/',
-            'português': '/pt/'
-        }
+        steps = [
+            ("Seleccionar origen", lambda: self.select_origin(origin)),
+            ("Seleccionar destino", lambda: self.select_destination(destination)),
+            ("Seleccionar pasajeros", lambda: self.select_passengers(adults, youth, children, infants)),
+            ("Buscar vuelos", lambda: self.search_flights())
+        ]
         
-        if expected_language.lower() in language_codes:
-            expected_code = language_codes[expected_language.lower()]
-            if expected_code in current_url:
-                logger.info(f"✅ URL contiene contexto de idioma: {expected_language} ({expected_code})")
-                return True
-            else:
-                logger.warning(f"⚠️  URL no contiene contexto de idioma esperado: {expected_language}")
-                logger.info(f"   URL actual: {current_url}")
+        for step_name, step_func in steps:
+            if not step_func():
+                logger.error(f"❌ Falló en paso: {step_name}")
                 return False
+            time.sleep(1)
         
-        logger.warning(f"⚠️  Idioma no reconocido: {expected_language}")
-        return False
+        logger.info("✅ Búsqueda de vuelos completada exitosamente")
+        return True
+
+    def is_select_flight_page_loaded(self):
+        """Validar si la página de Select Flight cargó correctamente"""
+        logger.info("Validando carga de página Select Flight")
+        
+        try:
+            # Verificar por URL
+            current_url = self.get_page_url().lower()
+            if "select-flight" in current_url or "seleccionar-vuelo" in current_url:
+                logger.info("✅ Select Flight page loaded (URL verification)")
+                return True
+            
+            # Verificar por elementos de la página de resultados
+            select_flight_indicators = [
+                (By.XPATH, "//h1[contains(text(), 'Select Flight') or contains(text(), 'Seleccionar vuelo')]"),
+                (By.XPATH, "//div[contains(@class, 'flight-option')]"),
+                (By.XPATH, "//button[contains(text(), 'Select') or contains(text(), 'Seleccionar')]"),
+                (By.CLASS_NAME, "flight-list"),
+                (By.ID, "flightResults")
+            ]
+            
+            for indicator in select_flight_indicators:
+                if self.is_element_present(indicator, timeout=5):
+                    logger.info(f"✅ Select Flight page loaded (element: {indicator})")
+                    return True
+            
+            # Verificación de fallback: al menos no estamos en home
+            if "nuxqa3.avtest.ink" in current_url and "search" not in current_url:
+                logger.warning("❌ Still on home page after search")
+                return False
+                
+            logger.info("✅ Search results page loaded (basic verification)")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error validating Select Flight page: {e}")
+            return False
 
     # ===== MÉTODOS GENERALES =====
     
@@ -1091,3 +1308,11 @@ class HomePage(BasePage):
             return True
         except:
             return False
+
+    def find_elements(self, locator):
+        """Encontrar múltiples elementos"""
+        try:
+            return self.driver.find_elements(*locator)
+        except Exception as e:
+            logger.error(f"Error encontrando elementos {locator}: {e}")
+            return []

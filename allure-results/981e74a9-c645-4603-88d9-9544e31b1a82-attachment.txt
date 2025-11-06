@@ -1,4 +1,0 @@
-[33mWARNING [0m pages.home_page:home_page.py:213 ❌ POS actual 'Colombia
-COP' no coincide con el esperado 'Chile'
-[1m[31mERROR   [0m test_case_5:test_case_5.py:89 Error en test_change_pos para Chile: Falló la verificación del POS Chile
-assert False

@@ -1,3 +1,0 @@
-[1m[31mERROR   [0m pages.home_page:home_page.py:413 ❌ No se encontró enlace de ofertas
-[1m[31mERROR   [0m test_case_6:test_case_6.py:155 ❌ Test 6.1 FALLÓ: ❌ Falló la navegación a Ofertas y destinos
-assert False - https://nuxqa5.avtest.ink/

@@ -1,1 +1,0 @@
-[1m[31mERROR   [0m test_case_6:test_case_6.py:477 ❌ TEST 6.2 FALLÓ: No se pudo encontrar 'Personaliza tu viaje' en el submenú

@@ -1,7 +1,0 @@
-
-🚀 Iniciando CHROME (headless: False) - MODO DESKTOP
-✅ Usando ChromeDriver manual: C:\Users\DavidGalvezRestrepo\DATOS\DAVID\EXAMEN\project\drivers\chromedriver.exe
-✅ CHROME inicializado correctamente en modo DESKTOP
-🎥 Iniciando grabación de video REAL: videos/caso6_navbar_chrome_nuxqa4_chrome_20251104_101238.mp4
-⚠️  No hay grabación activa para detener
-🔴 Cerrando navegador
