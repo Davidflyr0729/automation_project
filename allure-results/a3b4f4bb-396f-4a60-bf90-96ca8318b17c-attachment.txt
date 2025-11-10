@@ -1,0 +1,23 @@
+[1m[31mERROR   [0m pages.home_page:home_page.py:1288 Error tomando screenshot: Message: no such window: target window already closed
+from unknown error: web view not found
+  (Session info: chrome=142.0.7444.60)
+Stacktrace:
+Symbols not available. Dumping unresolved backtrace:
+	0x7ff626c67a35
+	0x7ff626c67a90
+	0x7ff6269e16ad
+	0x7ff6269b8e01
+	0x7ff626a6a0be
+	0x7ff626a8b222
+	0x7ff626a2b068
+	0x7ff626a2be93
+	0x7ff626f229d0
+	0x7ff626f1ce50
+	0x7ff626f3cc45
+	0x7ff626c830ce
+	0x7ff626c8adbf
+	0x7ff626c70c14
+	0x7ff626c70dcf
+	0x7ff626c56828
+	0x7ffed862e8d7
+	0x7ffed9e2c53c

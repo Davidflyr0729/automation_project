@@ -5,6 +5,10 @@ import logging
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver import ActionChains
+from selenium.webdriver.common.keys import Keys
+from selenium.common.exceptions import TimeoutException, ElementClickInterceptedException
+import os
 from pages.home_page import HomePage
 
 logger = logging.getLogger(__name__)
@@ -287,59 +291,73 @@ class TestCase3:
             home_page.take_screenshot("error_boton_submit.png")
             assert False, f"No se pudo hacer login: {e}"
         
-        # 9. VERIFICAR LOGIN EXITOSO
-        logger.info("🔍 PASO 9: Verificando login exitoso...")
+        # 9. ESPERAR Y VERIFICAR REDIRECCIÓN A LANDING INTERMEDIA
+        logger.info("🔍 PASO 9: Esperando redirección a landing intermedia...")
         
-        current_url = driver.current_url
-        logger.info(f"🌐 URL después del login: {current_url}")
+        landing_url = "https://nuxqa3.avtest.ink/es/lifemiles-info/landing-intermedia/"
+        max_attempts = 3
+        landing_found = False
         
-        # Buscar indicadores de login exitoso
-        login_exitoso = False
-        try:
-            indicadores = [
-                (By.XPATH, "//*[contains(text(), 'Bienvenido')]"),
-                (By.XPATH, "//*[contains(text(), 'Welcome')]"),
-                (By.XPATH, "//*[contains(text(), 'Mi cuenta')]"),
-                (By.XPATH, "//*[contains(text(), 'My account')]"),
-                (By.CSS_SELECTOR, "[class*='user']"),
-                (By.CSS_SELECTOR, "[class*='profile']")
-            ]
+        for attempt in range(max_attempts):
+            current_url = driver.current_url
+            logger.info(f"🌐 URL actual ({attempt + 1}): {current_url}")
             
-            for selector_type, selector_value in indicadores:
-                try:
-                    elementos = driver.find_elements(selector_type, selector_value)
-                    for elem in elementos:
-                        if elem.is_displayed():
-                            logger.info(f"✅ Login exitoso - {elem.text}")
-                            login_exitoso = True
-                            break
-                except:
-                    continue
-                    
-        except Exception as e:
-            logger.error(f"❌ Error verificando login: {e}")
-        
-        if not login_exitoso:
-            logger.warning("⚠️ No se encontraron indicadores claros de login, pero continuamos")
-        
-        # 10. CAMBIAR IDIOMA A FRANCÉS
-        logger.info("🇫🇷 PASO 10: Cambiando idioma a Francés...")
-        
-        # Navegar a página principal si es necesario
-        if '/lifemiles-info/landing-intermedia/' in current_url:
-            logger.info("🏠 Navegando a página principal...")
-            try:
-                driver.get("https://nuxqa3.avtest.ink/es/")
+            if landing_url in current_url:
+                landing_found = True
+                logger.info("✅ Estamos en la landing intermedia")
+                break
+            else:
+                logger.info(f"⏳ Esperando redirección (intento {attempt + 1}/{max_attempts})...")
                 time.sleep(5)
-                logger.info("✅ En página principal")
-            except Exception as e:
-                logger.error(f"❌ Error navegando a página principal: {e}")
         
-        # Ejecutar cambio de idioma
+        if not landing_found:
+            logger.info("🔄 No se detectó redirección automática, navegando manualmente...")
+            try:
+                driver.get(landing_url)
+                WebDriverWait(driver, 10).until(
+                    EC.presence_of_element_located((By.TAG_NAME, "body"))
+                )
+                time.sleep(5)
+                logger.info("✅ Navegación manual exitosa")
+            except Exception as e:
+                logger.error(f"❌ Error navegando a landing: {e}")
+                raise
+        
+        # Tomar screenshot de la landing
+        home_page.take_screenshot("07_landing_intermedia.png")
+        
+        # 10. NAVEGAR A LA LANDING INTERMEDIA Y CAMBIAR IDIOMA A FRANCÉS
+        logger.info("🇫🇷 PASO 10: Navegando a landing intermedia y cambiando a Francés...")
+        
         try:
-            self._cambiar_idioma_frances(driver, home_page)
+            # Navegar explícitamente a la landing intermedia
+            landing_url = "https://nuxqa3.avtest.ink/es/lifemiles-info/landing-intermedia/"
+            logger.info(f"🏠 Navegando a landing intermedia: {landing_url}")
+            driver.get(landing_url)
+            
+            # Esperar a que la página cargue
+            WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.TAG_NAME, "body"))
+            )
+            time.sleep(5)  # Espera adicional para asegurar carga completa
+            
+            # Tomar screenshot de la landing
+            home_page.take_screenshot("07_landing_intermedia.png")
+            logger.info("✅ En landing intermedia")
+            
+            # Ejecutar cambio de idioma
+            if self._cambiar_idioma_frances(driver, home_page):
+                logger.info("✅ Idioma cambiado exitosamente")
+                home_page.take_screenshot("08_idioma_cambiado.png")
+            else:
+                logger.error("❌ No se pudo cambiar el idioma")
+                home_page.take_screenshot("error_cambio_idioma.png")
+                raise Exception("Fallo al cambiar idioma")
+                
         except Exception as e:
-            logger.error(f"❌ Error cambiando idioma: {e}")
+            logger.error(f"❌ Error en el proceso: {e}")
+            home_page.take_screenshot("error_proceso_cambio_idioma.png")
+            raise
         
         # 11. FINALIZAR
         logger.info("⏳ Espera final de 3 segundos...")
@@ -386,6 +404,95 @@ class TestCase3:
         
         return None
 
+    def _debug_language_elements(self, driver, home_page, prefix="debug"):
+        """Recolectar información para debug del selector de idioma.
+        Guarda screenshot, page_source y lista elementos candidatos/iframes.
+        """
+        logger.info(f"🐞 DEBUG: recolectando información del DOM ({prefix})...")
+
+        # Asegurar carpeta reports
+        reports_dir = os.path.join(os.getcwd(), "reports")
+        try:
+            os.makedirs(reports_dir, exist_ok=True)
+        except Exception:
+            logger.warning(f"No se pudo crear carpeta de reports: {reports_dir}")
+
+        # Screenshot (usa el helper si existe)
+        try:
+            home_page.take_screenshot(f"debug_{prefix}_screenshot.png")
+        except Exception as e:
+            logger.warning(f"No se pudo tomar screenshot con home_page: {e}")
+            try:
+                driver.save_screenshot(os.path.join(reports_dir, f"debug_{prefix}_screenshot.png"))
+            except Exception as e2:
+                logger.error(f"Fallo al guardar screenshot directo: {e2}")
+
+        # Guardar page source
+        try:
+            html_path = os.path.join(reports_dir, f"debug_{prefix}_page.html")
+            with open(html_path, "w", encoding="utf-8") as f:
+                f.write(driver.page_source)
+            logger.info(f"✅ Page source guardado en: {html_path}")
+        except Exception as e:
+            logger.error(f"❌ Error guardando page source: {e}")
+
+        # Buscar elementos candidatos para trigger del idioma
+        candidate_selectors = [
+            (By.CSS_SELECTOR, "button[id^='languageListTriggerId_']"),
+            (By.CSS_SELECTOR, "button[class*='dropdown_trigger']"),
+            (By.XPATH, "//button[contains(@class,'dropdown_trigger') and (@role='combobox' or @role='button')]")
+        ]
+
+        for sel_type, sel in candidate_selectors:
+            try:
+                elems = driver.find_elements(sel_type, sel)
+                logger.info(f"🔎 Selector {sel} -> encontrados: {len(elems)}")
+                for i, el in enumerate(elems[:5]):
+                    try:
+                        logger.info(f"  Elemento {i}: id={el.get_attribute('id')}, class={el.get_attribute('class')}, role={el.get_attribute('role')}, aria-label={el.get_attribute('aria-label')}, text='{el.text[:80]}' visible={el.is_displayed()}")
+                    except Exception as e:
+                        logger.info(f"  Error leyendo atributos elemento {i}: {e}")
+            except Exception as e:
+                logger.info(f"🔍 Error buscando selector {sel}: {e}")
+
+        # Buscar cualquier elemento con role listbox / option
+        try:
+            listboxes = driver.find_elements(By.CSS_SELECTOR, "ul[role='listbox'], div[role='listbox']")
+            logger.info(f"🔎 listbox encontrados: {len(listboxes)}")
+            for i, lb in enumerate(listboxes[:5]):
+                try:
+                    logger.info(f"  listbox {i}: class={lb.get_attribute('class')}, id={lb.get_attribute('id')}, visible={lb.is_displayed()}")
+                except Exception as e:
+                    logger.info(f"  Error leyendo listbox {i}: {e}")
+        except Exception as e:
+            logger.info(f"🔍 Error buscando listboxes: {e}")
+
+        # Buscar opciones role=option
+        try:
+            options = driver.find_elements(By.CSS_SELECTOR, "li[role*='option'], div[role*='option']")
+            logger.info(f"🔎 opciones (role=option) encontradas: {len(options)}")
+            for i, opt in enumerate(options[:10]):
+                try:
+                    logger.info(f"  opción {i}: text='{opt.text[:80]}', aria-label={opt.get_attribute('aria-label')}, visible={opt.is_displayed()}")
+                except Exception as e:
+                    logger.info(f"  Error leyendo opción {i}: {e}")
+        except Exception as e:
+            logger.info(f"🔍 Error buscando options: {e}")
+
+        # Revisar iframes
+        try:
+            iframes = driver.find_elements(By.TAG_NAME, "iframe")
+            logger.info(f"🔎 Iframes totales: {len(iframes)}")
+            for i, fr in enumerate(iframes[:10]):
+                try:
+                    logger.info(f"  iframe {i}: id={fr.get_attribute('id')}, name={fr.get_attribute('name')}, src={fr.get_attribute('src')}")
+                except Exception as e:
+                    logger.info(f"  Error leyendo iframe {i}: {e}")
+        except Exception as e:
+            logger.info(f"🔍 Error listando iframes: {e}")
+
+        logger.info(f"🐞 DEBUG: recolección ({prefix}) completada")
+
     def _buscar_en_iframes(self, driver, home_page):
         """Buscar formulario de login en iframes"""
         logger.info("🔍 Buscando en iframes...")
@@ -423,55 +530,100 @@ class TestCase3:
         logger.info("🇫🇷 Cambiando idioma a francés...")
         
         try:
-            # Buscar selector de idioma
-            selector_idioma = None
-            selectores = [
-                "li.main-header_nav-secondary_item--language-selector button.dropdown_trigger",
-                "button.dropdown_trigger[id*='languageListTrigger']",
-                "button[aria-label*='Español']",
-                ".language-selector button"
+            # Esperar a que el botón del idioma sea clickeable
+            wait = WebDriverWait(driver, 10)
+            lang_button = wait.until(
+                EC.element_to_be_clickable((By.CSS_SELECTOR, "button[class*='dropdown_trigger']"))
+            )
+            logger.info("✅ Botón de idioma encontrado")
+            # Recolectar información antes de intentar abrir el dropdown
+            try:
+                self._debug_language_elements(driver, home_page, prefix="before_click")
+            except Exception as e:
+                logger.warning(f"No se pudo ejecutar debug previo: {e}")
+            
+            # Intentar múltiples estrategias para hacer click
+            try_strategies = [
+                lambda: home_page.click_element(lang_button),  # Click normal
+                lambda: ActionChains(driver).move_to_element(lang_button).click().perform(),  # Click con Actions
+                lambda: ActionChains(driver).move_to_element(lang_button).click_and_hold().release().perform(),  # Click y soltar
+                lambda: lang_button.send_keys(Keys.RETURN),  # Click con RETURN
+                lambda: driver.execute_script("arguments[0].click();", lang_button)  # Click con JavaScript
             ]
             
-            for selector in selectores:
+            success = False
+            for i, strategy in enumerate(try_strategies, 1):
                 try:
-                    elemento = driver.find_element(By.CSS_SELECTOR, selector)
-                    if elemento.is_displayed() and elemento.is_enabled():
-                        selector_idioma = elemento
-                        logger.info(f"✅ Selector encontrado: {selector}")
+                    logger.info(f"🔄 Intentando estrategia de click #{i}...")
+                    strategy()
+                    time.sleep(2)  # Pequeña espera para ver si el menú se abre
+                    
+                    # Verificar si el menú está visible
+                    try:
+                        menu = wait.until(
+                            EC.visibility_of_element_located((By.CSS_SELECTOR, "ul[role='listbox']"))
+                        )
+                        success = True
+                        logger.info(f"✅ Menú de idiomas visible (estrategia #{i})")
                         break
-                except:
+                    except TimeoutException:
+                        logger.info(f"⚠️ Menú no visible con estrategia #{i}")
+                        continue
+                except Exception as e:
+                    logger.info(f"⚠️ Estrategia #{i} falló: {str(e)}")
                     continue
             
-            if selector_idioma:
-                # Abrir dropdown
-                home_page.click_element(selector_idioma)
-                logger.info("✅ Dropdown abierto")
-                time.sleep(3)
-                
-                # Buscar y hacer click en Francés
-                opciones_frances = [
-                    "//*[contains(text(), 'Français')]",
-                    "//*[contains(text(), 'French')]"
-                ]
-                
-                for xpath in opciones_frances:
-                    try:
-                        french_btn = driver.find_element(By.XPATH, xpath)
-                        if french_btn.is_displayed():
-                            home_page.click_element(french_btn)
-                            logger.info("✅ Click en Francés")
-                            time.sleep(5)
-                            
-                            # Verificar cambio
-                            if '/fr/' in driver.current_url:
-                                logger.info("🎉 Idioma cambiado a francés")
-                                return True
-                    except:
-                        continue
+            if not success:
+                raise Exception("No se pudo abrir el menú de idiomas")
             
-            logger.warning("⚠️ No se pudo cambiar idioma")
-            return False
+            # Buscar la opción de francés en el menú
+            french_option = wait.until(
+                EC.presence_of_element_located((By.XPATH, "//li[contains(@role, 'option') and contains(text(), 'Français')]"))
+            )
             
+            # Intentar click en la opción de francés
+            try_strategies = [
+                lambda: french_option.click(),
+                lambda: ActionChains(driver).move_to_element(french_option).click().perform(),
+                lambda: driver.execute_script("arguments[0].click();", french_option)
+            ]
+            
+            success = False
+            for i, strategy in enumerate(try_strategies, 1):
+                try:
+                    logger.info(f"🔄 Intentando seleccionar francés (estrategia #{i})...")
+                    strategy()
+                    time.sleep(3)
+                    
+                    # Verificar cambio de URL o texto del botón
+                    current_url = driver.current_url
+                    if "/fr/" in current_url:
+                        success = True
+                        logger.info("✅ URL cambió a francés")
+                        break
+                        
+                    # Verificar texto del botón
+                    button_text = lang_button.get_attribute("aria-label") or lang_button.text
+                    if "français" in button_text.lower():
+                        success = True
+                        logger.info("✅ Texto del botón indica francés")
+                        break
+                except Exception as e:
+                    logger.info(f"⚠️ Estrategia #{i} falló: {str(e)}")
+                    continue
+            
+            if success:
+                logger.info("🎉 Cambio de idioma exitoso")
+                home_page.take_screenshot("08_idioma_cambiado.png")
+                return True
+            else:
+                raise Exception("No se pudo cambiar el idioma a francés")
+                
         except Exception as e:
-            logger.error(f"❌ Error cambiando idioma: {e}")
+            logger.error(f"❌ Error en el proceso de cambio de idioma: {e}")
+            home_page.take_screenshot("error_cambio_idioma.png")
+            try:
+                self._debug_language_elements(driver, home_page, prefix="on_error")
+            except Exception as e2:
+                logger.warning(f"Fallo al ejecutar debug on_error: {e2}")
             return False

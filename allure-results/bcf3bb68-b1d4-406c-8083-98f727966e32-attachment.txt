@@ -1,0 +1,9 @@
+
+🚀 Iniciando CHROME (headless: False) - MODO DESKTOP
+✅ Usando ChromeDriver manual: C:\Users\DavidGalvezRestrepo\DATOS\DAVID\EXAMEN\project\drivers\chromedriver.exe
+✅ CHROME inicializado correctamente en modo DESKTOP
+✅ Click realizado en: <selenium.webdriver.remote.webelement.WebElement (session="697b12ec122e3adacc3b8898ff2115b8", element="f.1C4D503260622425DCEB8D805A9521D0.d.ED489DBC229ACCB10DDA70D409CCB51F.e.25")>
+✅ Click realizado en: <selenium.webdriver.remote.webelement.WebElement (session="697b12ec122e3adacc3b8898ff2115b8", element="f.77A614CA8D56E991622EC95883E51601.d.9F298D59833D1757F99D3A7E2D975E84.e.8")>
+✅ Click realizado en: <selenium.webdriver.remote.webelement.WebElement (session="697b12ec122e3adacc3b8898ff2115b8", element="f.77A614CA8D56E991622EC95883E51601.d.9F298D59833D1757F99D3A7E2D975E84.e.19")>
+✅ Click realizado en: <selenium.webdriver.remote.webelement.WebElement (session="697b12ec122e3adacc3b8898ff2115b8", element="f.77A614CA8D56E991622EC95883E51601.d.9F298D59833D1757F99D3A7E2D975E84.e.21")>
+🔴 Cerrando navegador
