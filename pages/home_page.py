@@ -136,11 +136,17 @@ class HomePage(BasePage):
     SEARCH_FLIGHTS_BUTTON = (By.ID, "searchButton")
 
     # ===== LOCATORS PARA SELECCIÓN DE VUELOS =====
-    FIRST_FLIGHT_BUTTON = (By.XPATH, "//button[contains(@class, 'journey_price_button')]//span[contains(text(), 'Choisir le tarif')]")
-    FLEX_FARE_BUTTON = (By.XPATH, "//button[contains(@class, 'fare_button')]//span[contains(text(), 'Sélectionner')]")
+    FIRST_FLIGHT_BUTTON = (By.CSS_SELECTOR, "button.journey_price_button")
+    FIRST_FLIGHT_BUTTON_TEXT = (By.XPATH, "//button[contains(@class, 'journey_price_button')]//span[contains(text(), 'Choisir le tarif')]")
+    FLEX_FARE_BUTTON = (By.XPATH, "//button[contains(., 'Flex') or contains(., 'FLEX') or contains(@class, 'flex')]")
+    FLEX_FARE_SELECT = (By.XPATH, "//button[contains(., 'Sélectionner') and (contains(., 'Flex') or contains(., 'FLEX'))]")
+
+    # Contenedor de resultados de vuelos
+    FLIGHT_RESULTS_CONTAINER = (By.CSS_SELECTOR, "[class*='journey'], [class*='flight']")
+    FARE_OPTIONS_CONTAINER = (By.CSS_SELECTOR, "[class*='fare'], [class*='tariff']")
 
     # Para verificar que estamos en la página correcta
-    SELECT_FLIGHT_PAGE_INDICATOR = (By.XPATH, "//h1[contains(text(), 'Sélectionnez le vol') or contains(text(), 'Select flight')]")
+    SELECT_FLIGHT_PAGE_INDICATOR = (By.XPATH, "//h1[contains(., 'Sélectionnez') or contains(., 'Select') or contains(., 'Seleccionar')]")
 
     def __init__(self, driver):
         super().__init__(driver)
@@ -1454,40 +1460,325 @@ class HomePage(BasePage):
 
     # ===== MÉTODOS PARA SELECCIÓN DE VUELOS =====
     def select_first_flight(self):
-        """Seleccionar el primer vuelo disponible"""
-        logger.info("✈️ Seleccionando primer vuelo...")
+        """Seleccionar el primer vuelo disponible - OPTIMIZADO"""
+        logger.info("✈️ Seleccionando primer vuelo (optimizado)...")
         try:
-            # Verificar que estamos en la página de selección de vuelos
-            if self.is_element_present(self.SELECT_FLIGHT_PAGE_INDICATOR):
-                logger.info("✅ Estamos en la página de selección de vuelos")
+            # ESPERA OPTIMIZADA: Usar wait explícito en lugar de sleep
+            logger.info("🔄 Esperando carga de página...")
+            WebDriverWait(self.driver, 10).until(
+                EC.presence_of_element_located(self.FIRST_FLIGHT_BUTTON)
+            )
             
-            # Buscar y hacer clic en el primer botón "Choisir le tarif"
-            first_flight_btn = self.wait.until(EC.element_to_be_clickable(self.FIRST_FLIGHT_BUTTON))
-            first_flight_btn.click()
-            logger.info("✅ Clic en 'Choisir le tarif' realizado")
-            time.sleep(3)
+            # Scroll rápido
+            self.driver.execute_script("window.scrollTo(0, 400);")
             
-            return True
+            # Buscar botones de vuelo
+            flight_buttons = self.find_elements(self.FIRST_FLIGHT_BUTTON)
+            
+            if flight_buttons:
+                first_button = flight_buttons[0]
+                
+                # Scroll al elemento específico
+                self.driver.execute_script("arguments[0].scrollIntoView({block: 'center', behavior: 'smooth'});", first_button)
+                
+                # Esperar que sea clickeable (máximo 5 segundos)
+                WebDriverWait(self.driver, 5).until(EC.element_to_be_clickable(first_button))
+                
+                self.click(first_button)
+                logger.info("✅ Vuelo seleccionado (optimizado)")
+                
+                # ESPERA REDUCIDA para carga de tarifas
+                time.sleep(2)
+                return True
+                
+            return False
             
         except Exception as e:
-            logger.error(f"❌ Error seleccionando primer vuelo: {e}")
+            logger.error(f"❌ Error seleccionando vuelo: {e}")
             return False
-
-    def select_flex_fare(self):
-        """Seleccionar tarifa Flex"""
+    
+    def select_flex_fare(self, is_return_flight=False):
+        """Seleccionar tarifa Flex - CON ESPERA ESTRATÉGICA PARA VUELOS DE REGRESO"""
         logger.info("🎫 Seleccionando tarifa Flex...")
         try:
-            # Buscar y hacer clic en el botón "Sélectionner" de tarifa Flex
-            flex_fare_btn = self.wait.until(EC.element_to_be_clickable(self.FLEX_FARE_BUTTON))
-            flex_fare_btn.click()
-            logger.info("✅ Clic en tarifa Flex realizado")
-            time.sleep(3)
+            # ESPERA OPTIMIZADA: Esperar máximo 8 segundos por las tarifas
+            logger.info("🔄 Esperando opciones de tarifa...")
+            FLEX_SELECTOR = (By.CSS_SELECTOR, "div.fare-control.fare9[aria-label*='Flex']")
+            
+            flex_element = WebDriverWait(self.driver, 8).until(
+                EC.element_to_be_clickable(FLEX_SELECTOR)
+            )
+            
+            # Buscar botón dentro del elemento Flex
+            select_button = flex_element.find_element(By.CSS_SELECTOR, "button.fare_button")
+            
+            # Esperar que el botón sea clickeable
+            WebDriverWait(self.driver, 5).until(EC.element_to_be_clickable(select_button))
+            
+            self.click(select_button)
+            logger.info("✅✅✅ Flex seleccionado")
+            
+            # 🔥 ESPERA ESTRATÉGICA: Si es para vuelo de IDA, esperar MÁS para vuelos de regreso
+            if not is_return_flight:
+                logger.info("🔄 ESPERA ESTRATÉGICA: Procesando vuelos de regreso...")
+                # Espera más larga específicamente para que carguen los vuelos de regreso
+                time.sleep(8)  # 8 segundos adicionales para procesamiento del servidor
+                
+                # Además, verificar que la página esté completamente lista
+                WebDriverWait(self.driver, 12).until(
+                    lambda driver: driver.execute_script("return document.readyState") == "complete"
+                )
+                
+                logger.info("✅✅✅ VUELOS DE REGRESO DEBERÍAN ESTAR CARGADOS")
+            else:
+                # Para vuelo de regreso, espera normal
+                time.sleep(3)
             
             return True
             
         except Exception as e:
-            logger.error(f"❌ Error seleccionando tarifa Flex: {e}")
+            logger.error(f"❌ Error seleccionando Flex: {e}")
             return False
+        
+    def wait_for_return_flights_loaded(self, timeout=20):  # 🔥 Aumentado a 20 segundos
+        """Espera inteligente para vuelos de regreso - MÁS TOLERANTE"""
+        logger.info("🔄 Esperando carga INTELIGENTE de vuelos de regreso...")
+        
+        try:
+            # INDICADORES MÁS FLEXIBLES
+            return_indicators = [
+                # 1. Cualquier botón de vuelo
+                (By.CSS_SELECTOR, "button.journey_price_button"),
+                # 2. Cualquier texto relacionado con vuelos
+                (By.XPATH, "//*[contains(text(), 'Retour') or contains(text(), 'Vuelta') or contains(text(), 'Return') or contains(text(), 'Regreso')]"),
+                # 3. Cualquier contenedor de vuelo
+                (By.CSS_SELECTOR, "[class*='journey'], [class*='flight']"),
+                # 4. Aeropuertos
+                (By.XPATH, "//*[contains(text(), 'BOG') or contains(text(), 'MDE') or contains(text(), 'Bogotá') or contains(text(), 'Medellín')]"),
+                # 5. Fechas de vuelo
+                (By.XPATH, "//*[contains(text(), '202')]")  # Años
+            ]
+            
+            # Esperar a que AL MENOS UN indicador esté presente (con timeout extendido)
+            WebDriverWait(self.driver, timeout).until(
+                lambda driver: any(
+                    len(driver.find_elements(*indicator)) > 0 
+                    for indicator in return_indicators
+                )
+            )
+            
+            logger.info("✅ Indicadores de vuelos de regreso encontrados")
+            
+            # ESPERA ADICIONAL ESPECÍFICA para botones clickeables
+            logger.info("🔄 Verificando que los botones sean clickeables...")
+            WebDriverWait(self.driver, 8).until(
+                lambda driver: any(
+                    btn.is_displayed() and btn.is_enabled()
+                    for btn in driver.find_elements(By.CSS_SELECTOR, "button.journey_price_button")
+                    if btn.is_displayed()
+                )
+            )
+            
+            logger.info("✅✅✅ VUELOS DE REGRESO CARGADOS Y LISTOS")
+            return True
+            
+        except Exception as e:
+            logger.error(f"❌ Timeout esperando vuelos de regreso: {e}")
+            
+            # DEPURACIÓN: Mostrar qué SÍ hay disponible
+            self.debug_return_flights_status()
+            return False    
+
+    def wait_for_page_complete_load(self, timeout=15):
+        """Esperar a que la página cargue completamente - OPTIMIZADO"""
+        logger.info("🔄 Esperando carga completa de página...")
+        try:
+            # Esperar a que el documento esté listo
+            WebDriverWait(self.driver, timeout).until(
+                lambda driver: driver.execute_script("return document.readyState") == "complete"
+            )
+            
+            # Esperar a que no haya elementos de carga visibles
+            WebDriverWait(self.driver, timeout).until(
+                lambda driver: len(driver.find_elements(By.CSS_SELECTOR, "[class*='loading'], [class*='spinner']")) == 0
+            )
+            
+            logger.info("✅ Página cargada completamente")
+            return True
+            
+        except Exception as e:
+            logger.warning(f"⚠️  Carga de página tomó más tiempo: {e}")
+            return True  # Continuar de todos modos
+        
+    def select_return_flight_optimized(self):
+        """Seleccionar vuelo de regreso - CON SCROLL Y SELECCIÓN EXACTA"""
+        logger.info("🔄 Seleccionando vuelo de regreso (con scroll y selección exacta)...")
+        
+        try:
+            # PASO 1: Espera INTELIGENTE para vuelos de regreso
+            if not self.wait_for_return_flights_loaded(timeout=20):
+                logger.error("❌ No se cargaron los vuelos de regreso a tiempo")
+                return False
+            
+            # PASO 2: SCROLL ESTRATÉGICO para hacer visibles los vuelos de regreso
+            logger.info("🔄 Haciendo scroll estratégico para vuelos de regreso...")
+            
+            # Scroll más específico para la sección de vuelos de regreso
+            self.driver.execute_script("window.scrollTo(0, 800);")
+            time.sleep(2)
+            
+            # Scroll adicional si es necesario
+            self.driver.execute_script("window.scrollTo(0, 1000);")
+            time.sleep(1)
+            
+            # PASO 3: Buscar EXACTAMENTE los botones de vuelo de regreso
+            logger.info("🔍 Buscando botones específicos de vuelo de regreso...")
+            
+            # SELECTOR EXACTO basado en el HTML que me mostraste
+            return_buttons = self.find_elements((By.CSS_SELECTOR, "button.journey_price_button.ng-tns-c12-62"))
+            
+            # Si no encuentra con la clase específica, buscar cualquier botón de vuelo
+            if not return_buttons:
+                logger.info("🔄 Buscando botones de vuelo alternativos...")
+                return_buttons = self.find_elements((By.CSS_SELECTOR, "button.journey_price_button"))
+            
+            logger.info(f"🔍 Botones de vuelo de regreso encontrados: {len(return_buttons)}")
+            
+            if not return_buttons:
+                logger.error("❌ No se encontraron botones de vuelo de regreso")
+                return False
+            
+            # PASO 4: Filtrar y seleccionar el PRIMER botón visible y habilitado
+            visible_buttons = []
+            for i, btn in enumerate(return_buttons):
+                try:
+                    if btn.is_displayed() and btn.is_enabled():
+                        btn_text = btn.text.replace('\n', ' ').strip()
+                        logger.info(f"  ✅ Botón {i} disponible: '{btn_text}'")
+                        visible_buttons.append(btn)
+                except Exception as e:
+                    logger.debug(f"  ❌ Botón {i} no disponible: {e}")
+                    continue
+            
+            logger.info(f"🔍 Botones de regreso clickeables: {len(visible_buttons)}")
+            
+            if not visible_buttons:
+                logger.error("❌ No hay botones clickeables de vuelo de regreso")
+                return False
+            
+            # PASO 5: Seleccionar el PRIMER botón clickeable
+            return_button = visible_buttons[0]
+            return_text = return_button.text.replace('\n', ' ').strip()
+            logger.info(f"🎯 Seleccionando primer vuelo de regreso: '{return_text}'")
+            
+            # SCROLL PRECISO al botón específico
+            logger.info("🔄 Haciendo scroll preciso al botón...")
+            self.driver.execute_script("arguments[0].scrollIntoView({block: 'center', behavior: 'smooth'});", return_button)
+            time.sleep(1)
+            
+            # Verificar una última vez que sea clickeable
+            logger.info("🔍 Verificando que el botón esté listo para clic...")
+            WebDriverWait(self.driver, 5).until(EC.element_to_be_clickable(return_button))
+            
+            # Hacer clic en el primer vuelo de regreso
+            logger.info("🖱️ Haciendo clic en el primer vuelo de regreso...")
+            self.click(return_button)
+            
+            logger.info("✅✅✅ VUELO DE REGRESO SELECCIONADO EXITOSAMENTE")
+            
+            # Espera para confirmar la selección
+            time.sleep(3)
+            return True
+            
+        except Exception as e:
+            logger.error(f"❌ Error crítico seleccionando vuelo de regreso: {e}")
+            
+            # Tomar screenshot del error
+            self.take_screenshot("error_critico_vuelo_regreso.png")
+            
+            # Depuración adicional
+            self.debug_return_flights_status()
+            return False
+        
+    def debug_return_flights_status(self):
+        """Depurar estado actual de los vuelos de regreso - MÁS DETALLADO"""
+        logger.info("🔍 DEPURANDO ESTADO DE VUELOS DE REGRESO (DETALLADO)...")
+        
+        try:
+            # Verificar diferentes tipos de botones
+            button_types = {
+                "Botones journey_price_button (todos)": len(self.find_elements((By.CSS_SELECTOR, "button.journey_price_button"))),
+                "Botones con clase específica ng-tns-c12-62": len(self.find_elements((By.CSS_SELECTOR, "button.journey_price_button.ng-tns-c12-62"))),
+                "Botones visibles": len([btn for btn in self.find_elements((By.CSS_SELECTOR, "button.journey_price_button")) if btn.is_displayed()]),
+                "Botones habilitados": len([btn for btn in self.find_elements((By.CSS_SELECTOR, "button.journey_price_button")) if btn.is_enabled()]),
+            }
+            
+            logger.info("📊 ESTADO DETALLADO DE BOTONES:")
+            for key, value in button_types.items():
+                logger.info(f"  {key}: {value}")
+            
+            # Mostrar información de los primeros 3 botones
+            all_buttons = self.find_elements((By.CSS_SELECTOR, "button.journey_price_button"))
+            logger.info("🔍 INFORMACIÓN DE PRIMEROS 3 BOTONES:")
+            for i, btn in enumerate(all_buttons[:3]):
+                try:
+                    text = btn.text.replace('\n', ' ').strip()
+                    displayed = btn.is_displayed()
+                    enabled = btn.is_enabled()
+                    classes = btn.get_attribute('class')
+                    logger.info(f"  Botón {i}: '{text}' | Visible: {displayed} | Habilitado: {enabled} | Clases: {classes}")
+                except:
+                    logger.info(f"  Botón {i}: No se pudo obtener información")
+            
+            # Tomar screenshot del estado actual
+            self.take_screenshot("debug_return_flights_detailed.png")
+            
+            return button_types
+            
+        except Exception as e:
+            logger.error(f"Error en depuración detallada: {e}")
+            return {}
+        
+    def debug_flight_selection(self):
+        """Método de depuración para ver qué hay en la página de vuelos"""
+        logger.info("🔍 DEPURANDO PÁGINA DE SELECCIÓN DE VUELOS")
+        
+        try:
+            # Tomar screenshot de la página actual
+            self.take_screenshot("debug_flight_page.png")
+            
+            # Buscar todos los botones disponibles
+            all_buttons = self.find_elements((By.TAG_NAME, "button"))
+            logger.info(f"🔍 Total de botones en la página: {len(all_buttons)}")
+            
+            # Filtrar botones relevantes
+            relevant_buttons = []
+            for i, button in enumerate(all_buttons):
+                try:
+                    text = button.text.strip()
+                    classes = button.get_attribute('class') or ''
+                    if text and ('choisir' in text.lower() or 'select' in text.lower() or 'tarif' in text.lower()):
+                        relevant_buttons.append((i, text, classes))
+                except:
+                    continue
+            
+            logger.info("🔍 BOTONES RELEVANTES ENCONTRADOS:")
+            for idx, text, classes in relevant_buttons:
+                logger.info(f"  {idx}: '{text}' - Clases: {classes}")
+            
+            # Buscar contenedores de vuelos
+            flight_containers = self.find_elements((By.CSS_SELECTOR, "[class*='journey'], [class*='flight']"))
+            logger.info(f"🔍 Contenedores de vuelo encontrados: {len(flight_containers)}")
+            
+            return {
+                'total_buttons': len(all_buttons),
+                'relevant_buttons': relevant_buttons,
+                'flight_containers': len(flight_containers)
+            }
+            
+        except Exception as e:
+            logger.error(f"❌ Error en depuración: {e}")
+            return {}    
 
     def select_round_trip_flights(self):
         """Seleccionar vuelos de ida y vuelta"""

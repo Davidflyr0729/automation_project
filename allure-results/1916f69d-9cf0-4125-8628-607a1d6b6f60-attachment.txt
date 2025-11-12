@@ -1,0 +1,13 @@
+
+                📊 RESUMEN DE CAPTURA NETWORK:
+                
+                Total Requests Capturados: 0
+                Eventos de Session: 0
+                Requests XHR: 0
+                
+                Archivos guardados:
+                - all_network_requests_20251112_121047.json
+                - session_events_20251112_121047.json
+                
+                Timestamp: 2025-11-12T12:10:47.876755
+                

@@ -1,0 +1,1 @@
+https://nuxqa3.avtest.ink/fr/booking/select/?origin1=BOG&destination1=MDE&departure1=2025-11-15&adt1=3&tng1=3&chd1=3&inf1=3&origin2=MDE&destination2=BOG&departure2=2025-11-18&adt2=3&tng2=3&chd2=3&inf2=3&currency=EUR&posCode=EU

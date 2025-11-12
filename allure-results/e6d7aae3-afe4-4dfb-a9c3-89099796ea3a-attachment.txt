@@ -1,0 +1,41 @@
+[31m[1mERROR   [0m utils.network_capture:network_capture.py:83 ❌ Error capturando network requests: Message: invalid argument: log type 'performance' not found
+  (Session info: chrome=142.0.7444.135)
+Stacktrace:
+Symbols not available. Dumping unresolved backtrace:
+	0x7ff6ab8d7a35
+	0x7ff6ab8d7a90
+	0x7ff6ab6516ad
+	0x7ff6ab6eb706
+	0x7ff6ab69b068
+	0x7ff6ab69be93
+	0x7ff6abb929d0
+	0x7ff6abb8ce50
+	0x7ff6abbacc45
+	0x7ff6ab8f30ce
+	0x7ff6ab8fadbf
+	0x7ff6ab8e0c14
+	0x7ff6ab8e0dcf
+	0x7ff6ab8c6828
+	0x7ffe36cde8d7
+	0x7ffe37b0c53c
+
+[31m[1mERROR   [0m utils.network_capture:network_capture.py:83 ❌ Error capturando network requests: Message: invalid argument: log type 'performance' not found
+  (Session info: chrome=142.0.7444.135)
+Stacktrace:
+Symbols not available. Dumping unresolved backtrace:
+	0x7ff6ab8d7a35
+	0x7ff6ab8d7a90
+	0x7ff6ab6516ad
+	0x7ff6ab6eb706
+	0x7ff6ab69b068
+	0x7ff6ab69be93
+	0x7ff6abb929d0
+	0x7ff6abb8ce50
+	0x7ff6abbacc45
+	0x7ff6ab8f30ce
+	0x7ff6ab8fadbf
+	0x7ff6ab8e0c14
+	0x7ff6ab8e0dcf
+	0x7ff6ab8c6828
+	0x7ffe36cde8d7
+	0x7ffe37b0c53c

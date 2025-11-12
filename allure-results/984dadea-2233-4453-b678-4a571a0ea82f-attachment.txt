@@ -1,0 +1,81 @@
+CONSOLE LOGS:
+SEVERE: https://grafana-agent.dev-lifemiles.net/collect - Failed to load resource: net::ERR_NAME_NOT_RESOLVED - 12:08:53
+SEVERE: https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js 1:453216 "Faro\n" "@grafana/faro-web-sdk:transport-fetch\n" "Failed sending payload to the receiver\n" Object TypeError: Failed to fetch
+    at https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js:2:535239
+    at N.i.<computed> (https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js:2:529428)
+    at https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js:2:1184387
+    at https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js:2:466528
+    at o (https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js:2:465096)
+    at https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js:2:465284
+    at new B (https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js:2:534232)
+    at Object.add (https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js:2:465223)
+    at Yr.<anonymous> (https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js:2:465648)
+    at Generator.next (<anonymous>) - 12:08:53
+SEVERE: https://grafana-agent.dev-lifemiles.net/collect - Failed to load resource: net::ERR_NAME_NOT_RESOLVED - 12:08:53
+SEVERE: https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js 1:453216 "Faro\n" "@grafana/faro-web-sdk:transport-fetch\n" "Failed sending payload to the receiver\n" Object TypeError: Failed to fetch
+    at https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js:2:535239
+    at N.i.<computed> (https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js:2:529428)
+    at https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js:2:1184387
+    at https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js:2:466528
+    at o (https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js:2:465096)
+    at https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js:2:465284
+    at new B (https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js:2:534232)
+    at Object.add (https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js:2:465223)
+    at Yr.<anonymous> (https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js:2:465648)
+    at Generator.next (<anonymous>) - 12:08:53
+SEVERE: https://cab.lifemiles.com/scriptdealer/script/v1/ktl2i/login.js?clientId=805ee14d-bfcc-4195-885d-6771fae4e10a&websiteId=1883 - Failed to load resource: net::ERR_CERT_DATE_INVALID - 12:08:53
+WARNING: https://hydra.uat-lifemiles.net/terms?consent_challenge=db07bd0e7da943b88fbc6aff293d1011 - [GroupMarkerNotSet(crbug.com/242999)!:A8202F00F46B0000]Automatic fallback to software WebGL has been deprecated. Please use the --enable-unsafe-swiftshader (about:flags#enable-unsafe-swiftshader) flag to opt in to lower security guarantees for trusted content. - 12:08:53
+SEVERE: https://grafana-agent.dev-lifemiles.net/collect - Failed to load resource: net::ERR_NAME_NOT_RESOLVED - 12:08:53
+SEVERE: https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js 1:453216 "Faro\n" "@grafana/faro-web-sdk:transport-fetch\n" "Failed sending payload to the receiver\n" Object TypeError: Failed to fetch
+    at https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js:2:535239
+    at N.i.<computed> (https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js:2:529428)
+    at https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js:2:1184387
+    at https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js:2:466528
+    at o (https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js:2:465096)
+    at https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js:2:465284
+    at new B (https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js:2:534232)
+    at Object.add (https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js:2:465223)
+    at Yr.<anonymous> (https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js:2:465648)
+    at Generator.next (<anonymous>) - 12:08:53
+SEVERE: https://grafana-agent.dev-lifemiles.net/collect - Failed to load resource: net::ERR_NAME_NOT_RESOLVED - 12:08:53
+SEVERE: https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js 1:453216 "Faro\n" "@grafana/faro-web-sdk:transport-fetch\n" "Failed sending payload to the receiver\n" Object TypeError: Failed to fetch
+    at https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js:2:535239
+    at N.i.<computed> (https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js:2:529428)
+    at https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js:2:1184387
+    at https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js:2:466528
+    at o (https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js:2:465096)
+    at https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js:2:465284
+    at new B (https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js:2:534232)
+    at Object.add (https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js:2:465223)
+    at Yr.<anonymous> (https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js:2:465648)
+    at Generator.next (<anonymous>) - 12:08:53
+SEVERE: javascript 0:0 Uncaught ReferenceError: hj is not defined - 12:08:53
+SEVERE: https://grafana-agent.dev-lifemiles.net/collect - Failed to load resource: net::ERR_NAME_NOT_RESOLVED - 12:08:53
+SEVERE: https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js 1:453216 "Faro\n" "@grafana/faro-web-sdk:transport-fetch\n" "Failed sending payload to the receiver\n" Object TypeError: Failed to fetch
+    at https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js:2:535239
+    at N.i.<computed> (https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js:2:529428)
+    at https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js:2:1184387
+    at https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js:2:466528
+    at o (https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js:2:465096)
+    at https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js:2:465284
+    at new B (https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js:2:534232)
+    at Object.add (https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js:2:465223)
+    at Yr.<anonymous> (https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js:2:465648)
+    at Generator.next (<anonymous>) - 12:08:53
+SEVERE: https://grafana-agent.dev-lifemiles.net/collect - Failed to load resource: net::ERR_NAME_NOT_RESOLVED - 12:08:53
+SEVERE: https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js 1:453216 "Faro\n" "@grafana/faro-web-sdk:transport-fetch\n" "Failed sending payload to the receiver\n" Object TypeError: Failed to fetch
+    at https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js:2:535239
+    at N.i.<computed> (https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js:2:529428)
+    at https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js:2:1184387
+    at https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js:2:466528
+    at o (https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js:2:465096)
+    at https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js:2:465284
+    at new B (https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js:2:534232)
+    at Object.add (https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js:2:465223)
+    at Yr.<anonymous> (https://d2ptwux79zic3h.cloudfront.net/v1/lm-tecnologias-interactivas/website-authentication-ui/uat/vendors.fragment.85a92662e577db510420-21915.js:2:465648)
+    at Generator.next (<anonymous>) - 12:08:53
+WARNING: https://static-nuxqa3.avtest.ink/angular/vendor.js?1001 0:17601 "[KEYCLOAK] Usage of legacy style promise methods such as `.error()` and `.success()` has been deprecated and support will be removed in future versions. Use standard style promise methods such as `.then() and `.catch()` instead." - 12:08:53
+WARNING: https://static-nuxqa3.avtest.ink/angular/vendor.js?1001 0:17601 "[KEYCLOAK] Usage of legacy style promise methods such as `.error()` and `.success()` has been deprecated and support will be removed in future versions. Use standard style promise methods such as `.then() and `.catch()` instead." - 12:08:54
+WARNING: https://static-nuxqa3.avtest.ink/angular/vendor.js?1001 0:17601 "[KEYCLOAK] Usage of legacy style promise methods such as `.error()` and `.success()` has been deprecated and support will be removed in future versions. Use standard style promise methods such as `.then() and `.catch()` instead." - 12:09:07
+WARNING: https://static-nuxqa3.avtest.ink/angular/vendor.js?1001 0:17601 "[KEYCLOAK] Usage of legacy style promise methods such as `.error()` and `.success()` has been deprecated and support will be removed in future versions. Use standard style promise methods such as `.then() and `.catch()` instead." - 12:09:21
+WARNING: https://static-nuxqa3.avtest.ink/angular/vendor.js?1001 0:17601 "[KEYCLOAK] Usage of legacy style promise methods such as `.error()` and `.success()` has been deprecated and support will be removed in future versions. Use standard style promise methods such as `.then() and `.catch()` instead." - 12:10:02

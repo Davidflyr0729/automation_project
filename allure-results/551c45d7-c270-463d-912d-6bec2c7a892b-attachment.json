@@ -1,0 +1,4 @@
+{
+  "error": "Message: invalid argument: log type 'performance' not found\n  (Session info: chrome=142.0.7444.135)\nStacktrace:\nSymbols not available. Dumping unresolved backtrace:\n\t0x7ff6ab8d7a35\n\t0x7ff6ab8d7a90\n\t0x7ff6ab6516ad\n\t0x7ff6ab6eb706\n\t0x7ff6ab69b068\n\t0x7ff6ab69be93\n\t0x7ff6abb929d0\n\t0x7ff6abb8ce50\n\t0x7ff6abbacc45\n\t0x7ff6ab8f30ce\n\t0x7ff6ab8fadbf\n\t0x7ff6ab8e0c14\n\t0x7ff6ab8e0dcf\n\t0x7ff6ab8c6828\n\t0x7ffe36cde8d7\n\t0x7ffe37b0c53c\n",
+  "capture_timestamp": "2025-11-12T12:10:47.876755"
+}
