@@ -1,0 +1,22 @@
+[31m[1mERROR   [0m pages.login_page:login_page.py:71 ❌ Error ingresando usuario: Message: 
+Stacktrace:
+Symbols not available. Dumping unresolved backtrace:
+	0x7ff6caa37a35
+	0x7ff6caa37a90
+	0x7ff6ca7b16ad
+	0x7ff6ca80a13e
+	0x7ff6ca80a44c
+	0x7ff6ca85ebe7
+	0x7ff6ca85b8fb
+	0x7ff6ca7fb068
+	0x7ff6ca7fbe93
+	0x7ff6cacf29d0
+	0x7ff6cacece50
+	0x7ff6cad0cc45
+	0x7ff6caa530ce
+	0x7ff6caa5adbf
+	0x7ff6caa40c14
+	0x7ff6caa40dcf
+	0x7ff6caa26828
+	0x7ffed862e8d7
+	0x7ffed9e2c53c

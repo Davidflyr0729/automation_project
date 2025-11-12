@@ -1,0 +1,116 @@
+
+🚀 Iniciando CHROME (headless: False) - MODO DESKTOP
+✅ Usando ChromeDriver manual: C:\Users\DavidGalvezRestrepo\DATOS\DAVID\EXAMEN\project\drivers\chromedriver.exe
+✅ CHROME inicializado correctamente en modo DESKTOP
+🔴 [DEBUG] INICIANDO TEST - Driver activo
+🔴 [DEBUG] Driver ID: 2484725035232
+🔴 [DEBUG] Driver session: 760a1ea9364208ca0629c9166e55597e
+🔴 [DEBUG] Paso 1 - Antes de get()
+🔴 [DEBUG] Paso 1 - Después de get()
+✅ Página principal cargada
+🔴 [DEBUG] Paso 2 - Antes de captura
+🔴 [DEBUG] Paso 2 - Después de captura
+🔴 [DEBUG] Paso 3 - Antes de click_login_button
+📍 URL actual antes del clic: https://nuxqa3.avtest.ink/es/
+📍 Pestañas abiertas antes: 1
+📍 Texto del botón: 'Iniciar sesión'
+⏱️ Esperando que se abra nueva pestaña...
+✅ Cambiado a nueva pestaña
+📍 NUEVA URL en nueva pestaña: https://hydra.uat-lifemiles.net/login?login_challenge=52aa602b2a5141b781a9b6dd17eecb13
+✅ Redirección a página de login detectada
+🔴 [DEBUG] Paso 3 - Después de click_login_button
+✅ Redireccionado a página de login
+🔴 [DEBUG] Paso 4 - Antes de enter_username
+🔍 Buscando campo de usuario...
+📍 URL actual: https://hydra.uat-lifemiles.net/login?login_challenge=52aa602b2a5141b781a9b6dd17eecb13
+✅ Campo de usuario encontrado
+📍 Visible: True
+📍 Habilitado: True
+📍 Placeholder: Número Lifemiles, usuario o correo
+🖱️ Haciendo clic en el campo de usuario...
+📝 Ingresando usuario...
+🔍 Valor ingresado en campo usuario: '21734198706'
+✅ USUARIO CONFIRMADO: '21734198706'
+🔴 [DEBUG] Paso 4 - Después de enter_username
+✅ Usuario ingresado
+🔴 [DEBUG] Paso 5 - Antes de enter_password
+🔍 Buscando campo de contraseña...
+📍 URL actual: https://hydra.uat-lifemiles.net/login?login_challenge=52aa602b2a5141b781a9b6dd17eecb13
+✅ Campo de contraseña encontrado
+📍 Visible: True
+📍 Habilitado: True
+📍 Placeholder: Contraseña
+🖱️ Haciendo clic en el campo de contraseña...
+📝 Ingresando contraseña...
+✅ CONTRASEÑA CONFIRMADA: [valor ingresado correctamente]
+🔴 [DEBUG] Paso 5 - Después de enter_password
+✅ Contraseña ingresada
+🔴 [DEBUG] Paso 6 - Antes de click_modal_login_button
+🔍 Buscando botón de login del modal...
+📍 URL actual: https://hydra.uat-lifemiles.net/login?login_challenge=52aa602b2a5141b781a9b6dd17eecb13
+✅ Botón de login encontrado
+📍 Texto del botón: 'Iniciar sesión'
+📍 Botón habilitado: True
+📍 Botón visible: True
+✅ Clic en botón de login del modal realizado
+🔴 [DEBUG] Paso 6 - Después de click_modal_login_button
+✅ Login completado
+🔄 Esperando redirección...
+🔴 [DEBUG] Paso 7 - Antes de sleep
+🔴 [DEBUG] Esperando... 1/8 segundos
+🔴 [DEBUG] URL durante espera: https://nuxqa3.avtest.ink/es/lifemiles/socialmedia/external-callback/#state=81f54787-781e-4137-8d82-419413c72bbe&session_state=feab6bc2-4cea-43a4-8cb0-d6a93b9d3164&iss=https%3A%2F%2Fsso.lifemiles.net%2Fauth%2Frealms%2Flm-uat&code=8a9926da-d5f3-4126-be5a-ab4e33e5c38c.feab6bc2-4cea-43a4-8cb0-d6a93b9d3164.40631ed7-bca0-40fe-aae6-6ba0fa75e20e
+🔴 [DEBUG] Esperando... 2/8 segundos
+🔴 [DEBUG] URL durante espera: None
+🔴 [DEBUG] Esperando... 3/8 segundos
+🔴 [DEBUG] Error obteniendo URL durante espera: Message: no such window: target window already closed
+from unknown error: web view not found
+  (Session info: chrome=142.0.7444.60)
+Stacktrace:
+Symbols not available. Dumping unresolved backtrace:
+	0x7ff6caa37a35
+	0x7ff6caa37a90
+	0x7ff6ca7b16ad
+	0x7ff6ca788e01
+	0x7ff6ca83a0be
+	0x7ff6ca85b222
+	0x7ff6ca7fb068
+	0x7ff6ca7fbe93
+	0x7ff6cacf29d0
+	0x7ff6cacece50
+	0x7ff6cad0cc45
+	0x7ff6caa530ce
+	0x7ff6caa5adbf
+	0x7ff6caa40c14
+	0x7ff6caa40dcf
+	0x7ff6caa26828
+	0x7ffed862e8d7
+	0x7ffed9e2c53c
+
+🔴 [DEBUG] Paso 7 - Después de sleep
+🔴 [DEBUG] Paso 8 - Antes de verificación
+❌ [DEBUG] ERROR CRÍTICO - Driver no responde: Message: no such window: target window already closed
+from unknown error: web view not found
+  (Session info: chrome=142.0.7444.60)
+Stacktrace:
+Symbols not available. Dumping unresolved backtrace:
+	0x7ff6caa37a35
+	0x7ff6caa37a90
+	0x7ff6ca7b16ad
+	0x7ff6ca788e01
+	0x7ff6ca83a0be
+	0x7ff6ca85b222
+	0x7ff6ca7fb068
+	0x7ff6ca7fbe93
+	0x7ff6cacf29d0
+	0x7ff6cacece50
+	0x7ff6cad0cc45
+	0x7ff6caa530ce
+	0x7ff6caa5adbf
+	0x7ff6caa40c14
+	0x7ff6caa40dcf
+	0x7ff6caa26828
+	0x7ffed862e8d7
+	0x7ffed9e2c53c
+
+🔴 [DEBUG] Intentando recuperar driver...
+🔴 Cerrando navegador

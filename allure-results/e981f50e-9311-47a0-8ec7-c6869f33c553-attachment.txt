@@ -1,0 +1,1 @@
+[31m[1mERROR   [0m pages.login_page:login_page.py:61 ❌ Error haciendo clic en botón de login: Message:

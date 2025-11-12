@@ -108,7 +108,7 @@ class HomePage(BasePage):
     ROUND_TRIP_OPTION = (By.XPATH, "//*[contains(text(), 'Ida y vuelta') or contains(text(), 'Round trip') or contains(text(), 'Aller-retour')]")
     
     ORIGIN_BUTTON = (By.ID, "originBtn")
-    ORIGIN_SEARCH_INPUT = (By.CSS_SELECTOR, "input[placeholder*='Desde'], input[placeholder*='From'], input[placeholder*='De']")
+    ORIGIN_SEARCH_INPUT = (By.ID, "departureStationInputId")
     ORIGIN_OPTIONS = (By.CSS_SELECTOR, "[role='option'], .station-option")
     
     DESTINATION_INPUT = (By.ID, "arrivalStationInputId")
@@ -117,15 +117,30 @@ class HomePage(BasePage):
     DEPARTURE_DATE_BUTTON = (By.CSS_SELECTOR, "[aria-label*='Fecha de ida'], [aria-label*='Departure date']")
     RETURN_DATE_BUTTON = (By.CSS_SELECTOR, "[aria-label*='Fecha de vuelta'], [aria-label*='Return date']")
     
-    PASSENGERS_BUTTON = (By.CSS_SELECTOR, "button[aria-label*='Pasajeros'], button[aria-label*='Passengers']")
-    PASSENGER_MODAL = (By.CSS_SELECTOR, ".passenger-selector, .passenger-modal")
-    ADULT_PLUS_BUTTON = (By.CSS_SELECTOR, "[aria-label*='Aumentar adultos'], [aria-label*='Increase adults']")
-    YOUTH_PLUS_BUTTON = (By.CSS_SELECTOR, "[aria-label*='Aumentar jóvenes'], [aria-label*='Increase youth']")
-    CHILD_PLUS_BUTTON = (By.CSS_SELECTOR, "[aria-label*='Aumentar niños'], [aria-label*='Increase children']")
-    INFANT_PLUS_BUTTON = (By.CSS_SELECTOR, "[aria-label*='Aumentar infantes'], [aria-label*='Increase infants']")
-    PASSENGER_CONFIRM_BUTTON = (By.CSS_SELECTOR, "button[aria-label*='Aplicar'], button[aria-label*='Apply']")
+    # ===== LOCATORS PARA SELECCIÓN DE PASAJEROS =====
+    PASSENGERS_BUTTON = (By.CSS_SELECTOR, "button.control_field_button[aria-label*='Passagers'], button.control_field_button[aria-label*='Pasajeros']")
+    PASSENGER_MODAL = (By.ID, "paxControlSearchId")
+    ADULT_PLUS_BUTTON = (By.XPATH, "//input[@id='inputPax_ADT']/ancestor::div[contains(@class, 'ui-num-ud')]//button[contains(@class, 'ui-num-ud_button') and contains(@class, 'plus')]")
+    YOUTH_PLUS_BUTTON = (By.XPATH, "//input[@id='inputPax_TNG']/ancestor::div[contains(@class, 'ui-num-ud')]//button[contains(@class, 'ui-num-ud_button') and contains(@class, 'plus')]")
+    YOUTH_INPUT = (By.ID, "inputPax_TNG")
+    CHILD_PLUS_BUTTON = (By.XPATH, "//input[@id='inputPax_CHD']/ancestor::div[contains(@class, 'ui-num-ud')]//button[contains(@class, 'ui-num-ud_button') and contains(@class, 'plus')]")
+    CHILD_INPUT = (By.ID, "inputPax_CHD")
+    INFANT_PLUS_BUTTON = (By.XPATH, "//input[@id='inputPax_INF']/ancestor::div[contains(@class, 'ui-num-ud')]//button[contains(@class, 'ui-num-ud_button') and contains(@class, 'plus')]")
+    INFANT_INPUT = (By.ID, "inputPax_INF")
+    PASSENGER_CONFIRM_BUTTON = (By.XPATH, "//button[contains(@class, 'control_options_selector_action_button')]//span[contains(text(), 'Confirmer')]")
+
+    # === LOCATORS ALTERNATIVOS BASADOS EN EL HTML REAL ===
+    ADULT_PLUS_ALTERNATIVE = (By.XPATH, "//input[@id='inputPax_ADT']/following-sibling::button[@class='ui-num-ud_button plus']")
+    ADULT_INPUT = (By.ID, "inputPax_ADT")
     
     SEARCH_FLIGHTS_BUTTON = (By.ID, "searchButton")
+
+    # ===== LOCATORS PARA SELECCIÓN DE VUELOS =====
+    FIRST_FLIGHT_BUTTON = (By.XPATH, "//button[contains(@class, 'journey_price_button')]//span[contains(text(), 'Choisir le tarif')]")
+    FLEX_FARE_BUTTON = (By.XPATH, "//button[contains(@class, 'fare_button')]//span[contains(text(), 'Sélectionner')]")
+
+    # Para verificar que estamos en la página correcta
+    SELECT_FLIGHT_PAGE_INDICATOR = (By.XPATH, "//h1[contains(text(), 'Sélectionnez le vol') or contains(text(), 'Select flight')]")
 
     def __init__(self, driver):
         super().__init__(driver)
@@ -1158,42 +1173,193 @@ class HomePage(BasePage):
         except Exception as e:
             logger.error(f"❌ Error seleccionando destino: {e}")
             return False
-
-    def select_passengers(self, adults=1, youth=0, children=0, infants=0):
-        """Seleccionar cantidad de pasajeros"""
-        logger.info(f"Seleccionando pasajeros: {adults} adultos, {youth} jóvenes, {children} niños, {infants} infantes")
+        
+    def select_any_origin_destination(self):
+        """Seleccionar origen y destino 'cualquiera' - CERRAR fechas con ESC"""
+        logger.info("Seleccionando origen y destino 'cualquiera'")
+        
         try:
-            self.click(self.PASSENGERS_BUTTON)
+            # PASO 0: Hacer scroll
+            logger.info("0. Haciendo scroll...")
+            self.driver.execute_script("window.scrollTo(0, 300);")
             time.sleep(2)
             
-            # Incrementar adultos
-            for _ in range(adults - 1):  # Ya hay 1 por defecto
-                self.click(self.ADULT_PLUS_BUTTON)
-                time.sleep(0.5)
+            # PASO 1: Seleccionar origen - BOGOTÁ
+            logger.info("1. Seleccionando Bogotá como origen...")
             
-            # Incrementar jóvenes
-            for _ in range(youth):
-                self.click(self.YOUTH_PLUS_BUTTON)
-                time.sleep(0.5)
+            origin_btn = self.wait.until(EC.element_to_be_clickable((By.ID, "originBtn")))
+            origin_btn.click()
+            time.sleep(2)
             
-            # Incrementar niños
-            for _ in range(children):
-                self.click(self.CHILD_PLUS_BUTTON)
-                time.sleep(0.5)
+            origin_input = self.wait.until(EC.element_to_be_clickable((By.ID, "departureStationInputId")))
+            origin_input.clear()
+            origin_input.send_keys("BOG")
+            time.sleep(3)
             
-            # Incrementar infantes
-            for _ in range(infants):
-                self.click(self.INFANT_PLUS_BUTTON)
-                time.sleep(0.5)
+            if self.is_element_present(self.ORIGIN_OPTIONS):
+                origin_options = self.find_elements(self.ORIGIN_OPTIONS)
+                for option in origin_options:
+                    if "BOG" in option.text or "Bogotá" in option.text:
+                        option.click()
+                        logger.info("✅ Bogotá seleccionado como origen")
+                        break
             
-            # Confirmar selección
-            self.click(self.PASSENGER_CONFIRM_BUTTON)
+            time.sleep(2)
+            
+            # PASO 2: Seleccionar destino - MEDELLÍN
+            logger.info("2. Seleccionando Medellín como destino...")
+            
+            dest_input = self.wait.until(EC.element_to_be_clickable((By.ID, "arrivalStationInputId")))
+            dest_input.click()
             time.sleep(1)
-            logger.info("✅ Pasajeros seleccionados")
+            
+            dest_input.clear()
+            dest_input.send_keys("MDE")
+            time.sleep(3)
+            
+            if self.is_element_present(self.DESTINATION_OPTIONS):
+                dest_options = self.find_elements(self.DESTINATION_OPTIONS)
+                for option in dest_options:
+                    if "MDE" in option.text or "Medellín" in option.text:
+                        option.click()
+                        logger.info("✅ Medellín seleccionado como destino")
+                        break
+            
+            # PASO 3: CERRAR MODAL DE FECHAS CON ESC (como hiciste manualmente)
+            logger.info("3. Cerrando modal de fechas con ESC...")
+            time.sleep(3)
+            
+            from selenium.webdriver.common.keys import Keys
+            body = self.find_element((By.TAG_NAME, "body"))
+            body.send_keys(Keys.ESCAPE)
+            logger.info("✅ Tecla ESC presionada")
+            time.sleep(2)
+            
+            logger.info("✅✅✅ ORIGEN/DESTINO CONFIGURADOS - FECHAS CERRADAS CON ESC")
+            return True
+                
+        except Exception as e:
+            logger.error(f"❌ Error: {e}")
+            return False
+
+
+    def select_passengers(self, adults=1, youth=0, children=0, infants=0):
+        """Seleccionar cantidad de pasajeros - CON LOCATORS CORREGIDOS"""
+        logger.info(f"Seleccionando pasajeros: {adults} adultos, {youth} jóvenes, {children} niños, {infants} infantes")
+        try:
+            # PASO 1: Abrir modal
+            logger.info("1. Abriendo modal de pasajeros...")
+            self.click(self.PASSENGERS_BUTTON)
+            time.sleep(3)
+            
+            # VERIFICAR que el modal se abrió
+            try:
+                modal = self.wait.until(EC.visibility_of_element_located(self.PASSENGER_MODAL))
+                logger.info("✅ Modal de pasajeros abierto correctamente")
+            except Exception as e:
+                logger.error(f"❌ Modal no se abrió: {e}")
+                return False
+            
+            # VERIFICAR que los botones + se encuentran
+            logger.info("🔍 Verificando botones +...")
+            
+            try:
+                adult_plus = self.wait.until(EC.presence_of_element_located(self.ADULT_PLUS_BUTTON))
+                logger.info("✅ Botón + adultos encontrado")
+            except Exception as e:
+                logger.error(f"❌ Botón + adultos NO encontrado: {e}")
+                return False
+                
+            try:
+                youth_plus = self.find_element(self.YOUTH_PLUS_BUTTON)
+                logger.info("✅ Botón + jóvenes encontrado")
+            except Exception as e:
+                logger.error(f"❌ Botón + jóvenes NO encontrado: {e}")
+                
+            try:
+                child_plus = self.find_element(self.CHILD_PLUS_BUTTON)
+                logger.info("✅ Botón + niños encontrado")
+            except Exception as e:
+                logger.error(f"❌ Botón + niños NO encontrado: {e}")
+                
+            try:
+                infant_plus = self.find_element(self.INFANT_PLUS_BUTTON)
+                logger.info("✅ Botón + infantes encontrado")
+            except Exception as e:
+                logger.error(f"❌ Botón + infantes NO encontrado: {e}")
+            
+            # PASO 2: Incrementar ADULTOS
+            logger.info(f"2. Incrementando adultos a {adults}...")
+            adult_count = 1
+            for i in range(adults - 1):
+                try:
+                    adult_plus = self.wait.until(EC.element_to_be_clickable(self.ADULT_PLUS_BUTTON))
+                    adult_plus.click()
+                    adult_count += 1
+                    logger.info(f"   ✅ Click {i+1} - Adultos: {adult_count}")
+                    time.sleep(0.5)
+                except Exception as e:
+                    logger.error(f"❌ Error en click {i+1} adultos: {e}")
+                    return False
+            
+            # PASO 3: Incrementar JÓVENES
+            logger.info(f"3. Incrementando jóvenes a {youth}...")
+            youth_count = 0
+            for i in range(youth):
+                try:
+                    youth_plus = self.wait.until(EC.element_to_be_clickable(self.YOUTH_PLUS_BUTTON))
+                    youth_plus.click()
+                    youth_count += 1
+                    logger.info(f"   ✅ Click {i+1} - Jóvenes: {youth_count}")
+                    time.sleep(0.5)
+                except Exception as e:
+                    logger.error(f"❌ Error en click {i+1} jóvenes: {e}")
+                    return False
+            
+            # PASO 4: Incrementar NIÑOS
+            logger.info(f"4. Incrementando niños a {children}...")
+            child_count = 0
+            for i in range(children):
+                try:
+                    child_plus = self.wait.until(EC.element_to_be_clickable(self.CHILD_PLUS_BUTTON))
+                    child_plus.click()
+                    child_count += 1
+                    logger.info(f"   ✅ Click {i+1} - Niños: {child_count}")
+                    time.sleep(0.5)
+                except Exception as e:
+                    logger.error(f"❌ Error en click {i+1} niños: {e}")
+                    return False
+            
+            # PASO 5: Incrementar INFANTES
+            logger.info(f"5. Incrementando infantes a {infants}...")
+            infant_count = 0
+            for i in range(infants):
+                try:
+                    infant_plus = self.wait.until(EC.element_to_be_clickable(self.INFANT_PLUS_BUTTON))
+                    infant_plus.click()
+                    infant_count += 1
+                    logger.info(f"   ✅ Click {i+1} - Infantes: {infant_count}")
+                    time.sleep(0.5)
+                except Exception as e:
+                    logger.error(f"❌ Error en click {i+1} infantes: {e}")
+                    return False
+            
+            # PASO 6: Confirmar selección
+            logger.info("6. Confirmando selección...")
+            try:
+                confirm_btn = self.wait.until(EC.element_to_be_clickable(self.PASSENGER_CONFIRM_BUTTON))
+                confirm_btn.click()
+                logger.info("✅ Selección confirmada")
+            except Exception as e:
+                logger.error(f"❌ Error confirmando selección: {e}")
+                return False
+            
+            time.sleep(2)
+            logger.info(f"✅✅✅ PASAJEROS CONFIGURADOS: {adult_count} adultos, {youth_count} jóvenes, {child_count} niños, {infant_count} infantes")
             return True
             
         except Exception as e:
-            logger.error(f"❌ Error seleccionando pasajeros: {e}")
+            logger.error(f"❌ Error general en select_passengers: {e}")
             return False
 
     def search_flights(self):
@@ -1226,6 +1392,136 @@ class HomePage(BasePage):
         
         logger.info("✅ Búsqueda de vuelos completada exitosamente")
         return True
+    
+    def test_adult_plus_button(self):
+        """MÉTODO TEMPORAL: Probar el botón + de adultos - VERSIÓN SIMPLIFICADA"""
+        logger.info("🔍 INICIANDO PRUEBA BOTÓN ADULTOS - VERSIÓN SIMPLIFICADA")
+        
+        try:
+            # PASO 1: Verificar estado actual
+            logger.info("1. Verificando estado del modal...")
+            self.take_screenshot("debug_estado_inicial.png")
+            
+            # Verificar si el modal ya está abierto
+            try:
+                modal = self.find_element(self.PASSENGER_MODAL)
+                if modal.is_displayed():
+                    logger.info("✅✅✅ MODAL YA ESTÁ ABIERTO - CONTINUANDO DIRECTAMENTE")
+                else:
+                    logger.info("🔄 Modal no abierto, intentando abrir...")
+                    # Intentar abrir el modal
+                    passengers_btn = self.wait.until(EC.element_to_be_clickable(self.PASSENGERS_BUTTON))
+                    passengers_btn.click()
+                    time.sleep(2)
+            except:
+                logger.info("🔄 Modal no encontrado, intentando abrir...")
+                # Intentar abrir el modal
+                passengers_btn = self.wait.until(EC.element_to_be_clickable(self.PASSENGERS_BUTTON))
+                passengers_btn.click()
+                time.sleep(2)
+            
+            # PASO 2: Buscar y hacer clic en botón + de adultos
+            logger.info("2. Buscando botón + de adultos...")
+            self.take_screenshot("debug_antes_boton_adultos.png")
+            
+            adult_plus = self.wait.until(EC.element_to_be_clickable(self.ADULT_PLUS_BUTTON))
+            adult_plus.click()
+            logger.info("✅ Clic en botón + de adultos realizado")
+            time.sleep(2)
+            
+            # PASO 3: Verificar resultado
+            logger.info("3. Verificando resultado...")
+            adult_input = self.find_element(self.ADULT_INPUT)
+            adult_value = adult_input.get_attribute("value")
+            logger.info(f"✅ Valor de adultos después del clic: {adult_value}")
+            
+            # PASO 4: Cerrar modal
+            logger.info("4. Cerrando modal...")
+            try:
+                confirm_btn = self.wait.until(EC.element_to_be_clickable(self.PASSENGER_CONFIRM_BUTTON))
+                confirm_btn.click()
+                logger.info("✅ Modal cerrado con Confirmar")
+            except:
+                logger.warning("⚠️ No se pudo cerrar el modal con Confirmar")
+            
+            logger.info("✅✅✅ PRUEBA COMPLETADA EXITOSAMENTE")
+            return True
+            
+        except Exception as e:
+            logger.error(f"❌ ERROR en prueba: {e}")
+            self.take_screenshot("error_adultos.png")
+            return False
+
+    # ===== MÉTODOS PARA SELECCIÓN DE VUELOS =====
+    def select_first_flight(self):
+        """Seleccionar el primer vuelo disponible"""
+        logger.info("✈️ Seleccionando primer vuelo...")
+        try:
+            # Verificar que estamos en la página de selección de vuelos
+            if self.is_element_present(self.SELECT_FLIGHT_PAGE_INDICATOR):
+                logger.info("✅ Estamos en la página de selección de vuelos")
+            
+            # Buscar y hacer clic en el primer botón "Choisir le tarif"
+            first_flight_btn = self.wait.until(EC.element_to_be_clickable(self.FIRST_FLIGHT_BUTTON))
+            first_flight_btn.click()
+            logger.info("✅ Clic en 'Choisir le tarif' realizado")
+            time.sleep(3)
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"❌ Error seleccionando primer vuelo: {e}")
+            return False
+
+    def select_flex_fare(self):
+        """Seleccionar tarifa Flex"""
+        logger.info("🎫 Seleccionando tarifa Flex...")
+        try:
+            # Buscar y hacer clic en el botón "Sélectionner" de tarifa Flex
+            flex_fare_btn = self.wait.until(EC.element_to_be_clickable(self.FLEX_FARE_BUTTON))
+            flex_fare_btn.click()
+            logger.info("✅ Clic en tarifa Flex realizado")
+            time.sleep(3)
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"❌ Error seleccionando tarifa Flex: {e}")
+            return False
+
+    def select_round_trip_flights(self):
+        """Seleccionar vuelos de ida y vuelta"""
+        logger.info("🔄 Seleccionando vuelos de ida y vuelta...")
+        try:
+            # PASO 1: Seleccionar vuelo de IDA
+            logger.info("1. Seleccionando vuelo de IDA...")
+            if not self.select_first_flight():
+                return False
+            
+            # PASO 2: Seleccionar tarifa Flex para IDA
+            logger.info("2. Seleccionando tarifa Flex para IDA...")
+            if not self.select_flex_fare():
+                return False
+            
+            # Esperar a que cargue la selección del vuelo de vuelta
+            time.sleep(5)
+            
+            # PASO 3: Seleccionar vuelo de VUELTA
+            logger.info("3. Seleccionando vuelo de VUELTA...")
+            if not self.select_first_flight():
+                return False
+            
+            # PASO 4: Seleccionar tarifa Flex para VUELTA
+            logger.info("4. Seleccionando tarifa Flex para VUELTA...")
+            if not self.select_flex_fare():
+                return False
+            
+            logger.info("✅✅✅ VUELOS DE IDA Y VUELTA SELECCIONADOS EXITOSAMENTE")
+            return True
+            
+        except Exception as e:
+            logger.error(f"❌ Error seleccionando vuelos ida y vuelta: {e}")
+            return False
 
     def is_select_flight_page_loaded(self):
         """Validar si la página de Select Flight cargó correctamente"""

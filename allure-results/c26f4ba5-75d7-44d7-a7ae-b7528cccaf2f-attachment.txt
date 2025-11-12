@@ -1,0 +1,12 @@
+
+🚀 Iniciando CHROME (headless: False) - MODO DESKTOP
+✅ Usando ChromeDriver manual: C:\Users\DavidGalvezRestrepo\DATOS\DAVID\EXAMEN\project\drivers\chromedriver.exe
+✅ CHROME inicializado correctamente en modo DESKTOP
+✅ Página principal cargada
+📍 URL actual antes del clic: https://nuxqa3.avtest.ink/es/
+📍 Texto del botón: 'Iniciar sesión'
+⏱️ Esperando cambio de URL a hydra.uat-lifemiles.net...
+❌ Error: Message: 
+
+📍 URL actual en el error: https://nuxqa3.avtest.ink/es/
+🔴 Cerrando navegador

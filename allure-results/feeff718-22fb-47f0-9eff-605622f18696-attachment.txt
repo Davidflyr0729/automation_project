@@ -1,0 +1,10 @@
+
+🚀 Iniciando CHROME (headless: False) - MODO DESKTOP
+✅ Usando ChromeDriver manual: C:\Users\DavidGalvezRestrepo\DATOS\DAVID\EXAMEN\project\drivers\chromedriver.exe
+✅ CHROME inicializado correctamente en modo DESKTOP
+✅ Página principal cargada
+📍 Texto del botón: 'Iniciar sesión'
+⏱️ Esperando 5 segundos para que el modal permanezca abierto...
+✅ Botón 'Iniciar sesión' clickeado
+✅ Modal de login abierto
+🔴 Cerrando navegador
