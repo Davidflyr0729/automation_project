@@ -43,6 +43,7 @@ class HomePage(BasePage):
     POS_OTHER_COUNTRIES = (By.XPATH, "//*[contains(text(), 'Otros países') or contains(text(), 'Other countries') or contains(text(), 'Autres pays') or contains(text(), 'Outros países')]")
     POS_SPAIN = (By.XPATH, "//*[contains(text(), 'España') or contains(text(), 'Spain') or contains(text(), 'Espagne')]")
     POS_CHILE = (By.XPATH, "//*[contains(text(), 'Chile')]")
+    POS_COLOMBIA = (By.XPATH, "//*[contains(text(), 'Colombia') or contains(text(), 'Colombie')]")
     
     # BOTÓN APLICAR/APPLY - LOCATOR EXACTO CON LA CLASE
     POS_APPLY_BUTTON = (By.CSS_SELECTOR, "button.points-of-sale_footer_action_button")
@@ -1065,7 +1066,8 @@ class HomePage(BasePage):
         pos_map = {
             'otros países': self.POS_OTHER_COUNTRIES,
             'españa': self.POS_SPAIN,
-            'chile': self.POS_CHILE
+            'chile': self.POS_CHILE,
+            'colombia': self.POS_COLOMBIA
         }
         
         country_option = self.wait.until(EC.element_to_be_clickable(pos_map[country_name.lower()]))
@@ -1496,51 +1498,120 @@ class HomePage(BasePage):
         except Exception as e:
             logger.error(f"❌ Error seleccionando vuelo: {e}")
             return False
-    
-    def select_flex_fare(self, is_return_flight=False):
-        """Seleccionar tarifa Flex - CON ESPERA ESTRATÉGICA PARA VUELOS DE REGRESO"""
-        logger.info("🎫 Seleccionando tarifa Flex...")
+        
+    def select_basic_fare(self):
+        """Seleccionar la tarifa Basic (la más barata) - PRIMER BOTÓN fare_button"""
+        logger.info("🎯 Seleccionando tarifa Basic (más barata)")
+        
         try:
-            # ESPERA OPTIMIZADA: Esperar máximo 8 segundos por las tarifas
-            logger.info("🔄 Esperando opciones de tarifa...")
-            FLEX_SELECTOR = (By.CSS_SELECTOR, "div.fare-control.fare9[aria-label*='Flex']")
+            # Esperar a que carguen las opciones de tarifa
+            logger.info("⏳ Esperando que carguen las opciones de tarifa...")
+            time.sleep(3)
             
-            flex_element = WebDriverWait(self.driver, 8).until(
-                EC.element_to_be_clickable(FLEX_SELECTOR)
-            )
+            # Buscar todos los botones de tarifa con clase fare_button
+            fare_buttons = self.find_elements((By.CSS_SELECTOR, "button.fare_button"))
+            logger.info(f"🔍 Botones de tarifa encontrados: {len(fare_buttons)}")
             
-            # Buscar botón dentro del elemento Flex
-            select_button = flex_element.find_element(By.CSS_SELECTOR, "button.fare_button")
+            if not fare_buttons:
+                logger.error("❌ No se encontraron botones de tarifa")
+                # Intentar buscar con otro selector por si acaso
+                fare_buttons_alt = self.find_elements((By.CSS_SELECTOR, "button[class*='fare'], button[class*='tariff']"))
+                logger.info(f"🔍 Botones alternativos encontrados: {len(fare_buttons_alt)}")
+                if fare_buttons_alt:
+                    fare_buttons = fare_buttons_alt
             
-            # Esperar que el botón sea clickeable
-            WebDriverWait(self.driver, 5).until(EC.element_to_be_clickable(select_button))
+            if not fare_buttons:
+                logger.error("❌ No se encontraron botones de tarifa con ningún selector")
+                return False
             
-            self.click(select_button)
-            logger.info("✅✅✅ Flex seleccionado")
+            # Mostrar información de las tarifas disponibles
+            logger.info("💰 Tarifas disponibles:")
+            for i, button in enumerate(fare_buttons):
+                try:
+                    texto = button.text.replace('\n', ' | ').strip()
+                    habilitado = button.is_enabled()
+                    logger.info(f"  {i+1}. '{texto}' - Habilitado: {habilitado}")
+                except:
+                    logger.info(f"  {i+1}. No se pudo leer información")
             
-            # 🔥 ESPERA ESTRATÉGICA: Si es para vuelo de IDA, esperar MÁS para vuelos de regreso
-            if not is_return_flight:
-                logger.info("🔄 ESPERA ESTRATÉGICA: Procesando vuelos de regreso...")
-                # Espera más larga específicamente para que carguen los vuelos de regreso
-                time.sleep(8)  # 8 segundos adicionales para procesamiento del servidor
-                
-                # Además, verificar que la página esté completamente lista
-                WebDriverWait(self.driver, 12).until(
-                    lambda driver: driver.execute_script("return document.readyState") == "complete"
-                )
-                
-                logger.info("✅✅✅ VUELOS DE REGRESO DEBERÍAN ESTAR CARGADOS")
-            else:
-                # Para vuelo de regreso, espera normal
-                time.sleep(3)
+            # Seleccionar la PRIMERA tarifa (que es la más barata/Basic)
+            primera_tarifa = fare_buttons[0]
+            texto_tarifa = primera_tarifa.text.replace('\n', ' | ').strip()
+            
+            logger.info(f"🎯 Seleccionando primera tarifa (Basic): '{texto_tarifa}'")
+            
+            # Verificar que el botón esté habilitado
+            if not primera_tarifa.is_enabled():
+                logger.error("❌ El botón de tarifa Basic no está habilitado")
+                return False
+            
+            # Hacer clic en la primera tarifa
+            logger.info("🖱️ Haciendo clic en tarifa Basic...")
+            self.click(primera_tarifa)
+            
+            # Espera inmediata después del clic
+            time.sleep(2)
+            logger.info("✅ Clic realizado - Tarifa Basic seleccionada")
             
             return True
             
         except Exception as e:
-            logger.error(f"❌ Error seleccionando Flex: {e}")
+            logger.error(f"❌ Error seleccionando tarifa Basic: {e}")
+            return False   
+    
+    def select_flex_fare(self):
+        """Seleccionar la tarifa Flex (la más cara) - ÚLTIMO BOTÓN fare_button"""
+        logger.info("🎯 Seleccionando tarifa Flex (más cara)")
+        
+        try:
+            # Esperar a que carguen las opciones de tarifa para el vuelo de regreso
+            logger.info("⏳ Esperando que carguen las opciones de tarifa para vuelo de regreso...")
+            time.sleep(4)
+            
+            # Buscar todos los botones de tarifa con clase fare_button
+            fare_buttons = self.find_elements((By.CSS_SELECTOR, "button.fare_button"))
+            logger.info(f"🔍 Botones de tarifa encontrados: {len(fare_buttons)}")
+            
+            if not fare_buttons:
+                logger.error("❌ No se encontraron botones de tarifa para vuelo de regreso")
+                return False
+            
+            # Mostrar información de las tarifas disponibles
+            logger.info("💰 Tarifas disponibles para vuelo de regreso:")
+            for i, button in enumerate(fare_buttons):
+                try:
+                    texto = button.text.replace('\n', ' | ').strip()
+                    habilitado = button.is_enabled()
+                    logger.info(f"  {i+1}. '{texto}' - Habilitado: {habilitado}")
+                except:
+                    logger.info(f"  {i+1}. No se pudo leer información")
+            
+            # Seleccionar la ÚLTIMA tarifa (que es la más cara/Flex)
+            ultima_tarifa = fare_buttons[-1]  # -1 significa el último elemento
+            texto_tarifa = ultima_tarifa.text.replace('\n', ' | ').strip()
+            
+            logger.info(f"🎯 Seleccionando última tarifa (Flex): '{texto_tarifa}'")
+            
+            # Verificar que el botón esté habilitado
+            if not ultima_tarifa.is_enabled():
+                logger.error("❌ El botón de tarifa Flex no está habilitado")
+                return False
+            
+            # Hacer clic en la última tarifa (Flex)
+            logger.info("🖱️ Haciendo clic en tarifa Flex...")
+            self.click(ultima_tarifa)
+            
+            # Espera inmediata después del clic
+            time.sleep(2)
+            logger.info("✅ Clic realizado - Tarifa Flex seleccionada")
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"❌ Error seleccionando tarifa Flex: {e}")
             return False
         
-    def wait_for_return_flights_loaded(self, timeout=20):  # 🔥 Aumentado a 20 segundos
+    def wait_for_return_flights_loaded(self, timeout=15):  # 🔥 Aumentado a 20 segundos
         """Espera inteligente para vuelos de regreso - MÁS TOLERANTE"""
         logger.info("🔄 Esperando carga INTELIGENTE de vuelos de regreso...")
         
@@ -1589,7 +1660,7 @@ class HomePage(BasePage):
             self.debug_return_flights_status()
             return False    
 
-    def wait_for_page_complete_load(self, timeout=15):
+    def wait_for_page_complete_load(self, timeout=12):
         """Esperar a que la página cargue completamente - OPTIMIZADO"""
         logger.info("🔄 Esperando carga completa de página...")
         try:
@@ -1850,6 +1921,768 @@ class HomePage(BasePage):
         except Exception as e:
             logger.error(f"Error validating Select Flight page: {e}")
             return False
+        
+    def click_continue_button(self):
+        """Buscar y hacer clic en el botón Continuar/Siguiente - CON SCROLL"""
+        logger.info("🎯 Buscando botón Continuar/Siguiente con scroll")
+        
+        try:
+            # PRIMERO: Hacer scroll hacia abajo para mostrar el botón
+            logger.info("🔄 Haciendo scroll hacia el final de la página...")
+            
+            # Scroll progresivo para asegurar que el botón se cargue
+            self.driver.execute_script("window.scrollTo(0, 500);")
+            time.sleep(1)
+            self.driver.execute_script("window.scrollTo(0, 1000);")
+            time.sleep(1)
+            self.driver.execute_script("window.scrollTo(0, 1500);")
+            time.sleep(1)
+            self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+            time.sleep(2)
+            
+            # También scroll hacia arriba un poco por si acaso
+            self.driver.execute_script("window.scrollTo(0, 800);")
+            time.sleep(1)
+            
+            # Buscar el botón por diferentes selectores y textos
+            continue_selectors = [
+                (By.XPATH, "//button[contains(text(), 'Continuar')]"),
+                (By.XPATH, "//button[contains(text(), 'Continue')]"),
+                (By.XPATH, "//button[contains(text(), 'Siguiente')]"),
+                (By.XPATH, "//button[contains(text(), 'Next')]"),
+                (By.XPATH, "//button[contains(., 'Continuar')]"),
+                (By.XPATH, "//button[contains(., 'Siguiente')]"),
+                (By.CSS_SELECTOR, "button[class*='continue']"),
+                (By.CSS_SELECTOR, "button[class*='next']"),
+                (By.CSS_SELECTOR, "button[class*='confirm']"),
+                (By.CSS_SELECTOR, "button.primary"),
+                (By.CSS_SELECTOR, "button[type='submit']"),
+                (By.CSS_SELECTOR, ".btn-primary"),
+                (By.CSS_SELECTOR, ".button-primary"),
+                (By.ID, "continueButton"),
+                (By.ID, "nextButton"),
+                (By.ID, "confirmButton"),
+            ]
+            
+            for selector in continue_selectors:
+                try:
+                    continue_btn = self.wait.until(EC.element_to_be_clickable(selector))
+                    btn_text = continue_btn.text.strip()
+                    logger.info(f"✅ Botón encontrado: '{btn_text}'")
+                    
+                    # Hacer scroll ESPECÍFICO a este botón
+                    logger.info("🔄 Haciendo scroll específico al botón...")
+                    self.driver.execute_script("arguments[0].scrollIntoView({block: 'center', behavior: 'smooth'});", continue_btn)
+                    time.sleep(1)
+                    
+                    # Verificar que esté visible después del scroll
+                    if not continue_btn.is_displayed():
+                        logger.warning("⚠️  Botón no visible después del scroll, intentando otro scroll...")
+                        self.driver.execute_script("window.scrollTo(0, arguments[0].offsetTop - 100);", continue_btn)
+                        time.sleep(1)
+                    
+                    # Hacer clic
+                    logger.info("🖱️ Haciendo clic en botón Continuar...")
+                    self.click(continue_btn)
+                    logger.info("✅ Clic en botón Continuar realizado")
+                    
+                    # Esperar a que cargue la siguiente página
+                    time.sleep(3)
+                    return True
+                    
+                except Exception as e:
+                    logger.debug(f"❌ Selector no funcionó: {selector} - {e}")
+                    continue
+            
+            # Si no encontró con selectores específicos, buscar entre todos los botones
+            logger.info("🔍 Buscando entre todos los botones de la página...")
+            all_buttons = self.find_elements((By.TAG_NAME, "button"))
+            logger.info(f"🔍 Total de botones en página: {len(all_buttons)}")
+            
+            for i, button in enumerate(all_buttons):
+                try:
+                    if button.is_displayed() and button.is_enabled():
+                        text = button.text.strip()
+                        if text and any(keyword in text.lower() for keyword in ['continuar', 'continue', 'siguiente', 'next', 'confirmar', 'confirm']):
+                            logger.info(f"🎯 Botón candidato encontrado: '{text}'")
+                            
+                            # Hacer scroll a este botón
+                            self.driver.execute_script("arguments[0].scrollIntoView({block: 'center', behavior: 'smooth'});", button)
+                            time.sleep(1)
+                            
+                            # Hacer clic
+                            self.click(button)
+                            logger.info(f"✅ Clic en botón '{text}' realizado")
+                            time.sleep(3)
+                            return True
+                except:
+                    continue
+            
+            logger.error("❌ No se pudo encontrar ningún botón Continuar")
+            return False
+            
+        except Exception as e:
+            logger.error(f"❌ Error buscando botón Continuar: {e}")
+            return False
+        
+    def debug_find_continue_button(self):
+        """DEBUG: Buscar específicamente el botón Continuar"""
+        logger.info("🔍 DEBUG: Buscando botón Continuar específicamente")
+        
+        try:
+            # Hacer scroll completo primero
+            self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+            time.sleep(2)
+            
+            # Buscar todos los elementos interactivos
+            all_buttons = self.find_elements((By.TAG_NAME, "button"))
+            all_links = self.find_elements((By.TAG_NAME, "a"))
+            all_inputs = self.find_elements((By.CSS_SELECTOR, "input[type='submit']"))
+            
+            logger.info(f"🔍 Elementos encontrados:")
+            logger.info(f"  - Botones: {len(all_buttons)}")
+            logger.info(f"  - Enlaces: {len(all_links)}")
+            logger.info(f"  - Inputs submit: {len(all_inputs)}")
+            
+            # Mostrar botones visibles
+            visible_buttons = []
+            for i, button in enumerate(all_buttons):
+                try:
+                    if button.is_displayed():
+                        text = button.text.strip()
+                        if text:
+                            visible_buttons.append((i, text))
+                            logger.info(f"  🎯 Botón {i}: '{text}'")
+                except:
+                    pass
+            
+            # Mostrar enlaces visibles
+            visible_links = []
+            for i, link in enumerate(all_links):
+                try:
+                    if link.is_displayed():
+                        text = link.text.strip()
+                        if text and len(text) < 50:  # Evitar textos muy largos
+                            visible_links.append((i, text))
+                            logger.info(f"  🔗 Enlace {i}: '{text}'")
+                except:
+                    pass
+            
+            return visible_buttons, visible_links
+            
+        except Exception as e:
+            logger.error(f"❌ Error en debug: {e}")
+            return [], []   
+
+    def generate_random_passenger_info(self, passenger_type="Adulto"):
+        """Generar información aleatoria para pasajeros según los campos requeridos"""
+        import random
+        import string
+        
+        # Nombres y apellidos comunes en español
+        first_names_male = ['Carlos', 'Juan', 'Luis', 'Pedro', 'Miguel', 'Javier', 'David', 'Jose', 
+                        'Andres', 'Fernando', 'Ricardo', 'Santiago', 'Daniel', 'Alejandro']
+        first_names_female = ['Maria', 'Ana', 'Laura', 'Sofia', 'Isabel', 'Carmen', 'Elena', 'Patricia',
+                            'Diana', 'Carolina', 'Valentina', 'Camila', 'Natalia', 'Gabriela']
+        last_names = ['Garcia', 'Rodriguez', 'Gonzalez', 'Fernandez', 'Lopez', 'Martinez', 
+                    'Sanchez', 'Perez', 'Gomez', 'Martin', 'Jimenez', 'Ruiz', 'Hernandez', 
+                    'Diaz', 'Moreno', 'Alvarez', 'Ramirez', 'Torres', 'Flores', 'Vargas']
+        
+        # Determinar género aleatoriamente
+        gender = random.choice(['M', 'F'])
+        
+        if gender == 'M':
+            first_name = random.choice(first_names_male)
+            gender_text = 'Masculino'
+        else:
+            first_name = random.choice(first_names_female)
+            gender_text = 'Femenino'
+        
+        # Generar fecha de nacimiento según el tipo de pasajero
+        if passenger_type == "Adulto":
+            birth_year = random.randint(1960, 2000)
+        elif passenger_type == "Joven":
+            birth_year = random.randint(2001, 2005)
+        elif passenger_type == "Niño":
+            birth_year = random.randint(2010, 2015)
+        else:  # Infante
+            birth_year = random.randint(2018, 2020)
+        
+        birth_month = random.randint(1, 12)
+        birth_day = random.randint(1, 28)  # Máximo 28 para evitar problemas con febrero
+        
+        info = {
+            'gender': gender,
+            'gender_text': gender_text,
+            'first_name': first_name,
+            'last_name': random.choice(last_names),
+            'birth_day': f"{birth_day:02d}",
+            'birth_month': f"{birth_month:02d}", 
+            'birth_year': str(birth_year),
+            'nationality': 'Colombia',
+            'frequent_flyer': 'No Aplica'
+        }
+        
+        logger.info(f"📝 Información generada para {passenger_type}: {first_name} {info['last_name']} - {gender_text}")
+        return info
+
+    def fill_passenger_information(self, passenger_type="Adulto", passenger_number=1):
+        """Llenar información de un pasajero con los campos específicos requeridos - VERSIÓN MEJORADA"""
+        logger.info(f"👤 Llenando información del {passenger_type} {passenger_number} - VERSIÓN MEJORADA")
+        
+        try:
+            # DEBUG: Tomar screenshot antes de empezar
+            self.take_screenshot(f"antes_llenar_pasajero_{passenger_number}.png")
+            
+            # Generar información aleatoria específica para el tipo de pasajero
+            passenger_info = self.generate_random_passenger_info(passenger_type)
+            logger.info(f"📝 Información generada: {passenger_info}")
+            
+            # 1. GÉNERO - Usar patrones de ID dinámicos
+            logger.info(f"🎯 Llenando género: {passenger_info['gender_text']}")
+            gender_selectors = [
+                (By.XPATH, f"//button[contains(@id, 'IdPaxGender_{passenger_number}')]"),
+                (By.XPATH, "//button[contains(@id, 'IdPaxGender_')]"),
+                (By.XPATH, "//button[contains(@id, 'PaxGender')]"),
+                (By.XPATH, "//div[contains(text(), 'Género')]/following::button[1]"),
+                (By.XPATH, f"(//div[contains(text(), 'Género')]/following::button[1])[{passenger_number}]"),
+            ]
+            
+            gender_filled = False
+            for selector in gender_selectors:
+                try:
+                    gender_button = self.wait.until(EC.element_to_be_clickable(selector))
+                    logger.info(f"✅ Botón de género encontrado con selector: {selector}")
+                    gender_button.click()
+                    time.sleep(1)
+                    
+                    # Buscar y seleccionar la opción en el dropdown
+                    gender_option_selectors = [
+                        (By.XPATH, f"//div[contains(text(), '{passenger_info['gender_text']}')]"),
+                        (By.XPATH, f"//*[contains(text(), '{passenger_info['gender_text']}')]"),
+                        (By.XPATH, f"//div[contains(text(), 'Masculino')]"),  # Opción específica
+                        (By.XPATH, f"//div[contains(text(), 'Femenino')]"),   # Opción específica
+                    ]
+                    
+                    for option_selector in gender_option_selectors:
+                        try:
+                            gender_option = self.wait.until(EC.element_to_be_clickable(option_selector))
+                            gender_option.click()
+                            gender_filled = True
+                            logger.info(f"✅ Género seleccionado: {passenger_info['gender_text']}")
+                            break
+                        except:
+                            continue
+                    
+                    if gender_filled:
+                        break
+                except Exception as e:
+                    logger.debug(f"❌ Selector de género falló: {selector} - {e}")
+                    continue
+            
+            if not gender_filled:
+                logger.warning("⚠️  No se pudo llenar el campo de género")
+            
+            # 2. NOMBRE
+            logger.info(f"🎯 Llenando nombre: {passenger_info['first_name']}")
+            first_name_selectors = [
+                (By.XPATH, f"//input[contains(@id, 'IdFirstName_{passenger_number}')]"),
+                (By.XPATH, "//input[contains(@id, 'IdFirstName')]"),
+                (By.XPATH, f"(//input[contains(@placeholder, 'Nombre')])[{passenger_number}]"),
+                (By.XPATH, "//label[contains(text(), 'Nombre')]/following::input[1]"),
+            ]
+            
+            first_name_filled = False
+            for selector in first_name_selectors:
+                try:
+                    first_name_field = self.wait.until(EC.element_to_be_clickable(selector))
+                    first_name_field.clear()
+                    first_name_field.send_keys(passenger_info['first_name'])
+                    first_name_filled = True
+                    logger.info(f"✅ Nombre llenado: {passenger_info['first_name']}")
+                    break
+                except Exception as e:
+                    logger.debug(f"❌ Selector de nombre falló: {selector} - {e}")
+                    continue
+            
+            if not first_name_filled:
+                logger.warning("⚠️  No se pudo llenar el campo de nombre")
+            
+            # 3. APELLIDO
+            logger.info(f"🎯 Llenando apellido: {passenger_info['last_name']}")
+            last_name_selectors = [
+                (By.XPATH, f"//input[contains(@id, 'IdLastName_{passenger_number}')]"),
+                (By.XPATH, "//input[contains(@id, 'IdLastName')]"),
+                (By.XPATH, f"(//input[contains(@placeholder, 'Apellido')])[{passenger_number}]"),
+                (By.XPATH, "//label[contains(text(), 'Apellido')]/following::input[1]"),
+            ]
+            
+            last_name_filled = False
+            for selector in last_name_selectors:
+                try:
+                    last_name_field = self.wait.until(EC.element_to_be_clickable(selector))
+                    last_name_field.clear()
+                    last_name_field.send_keys(passenger_info['last_name'])
+                    last_name_filled = True
+                    logger.info(f"✅ Apellido llenado: {passenger_info['last_name']}")
+                    break
+                except Exception as e:
+                    logger.debug(f"❌ Selector de apellido falló: {selector} - {e}")
+                    continue
+            
+            if not last_name_filled:
+                logger.warning("⚠️  No se pudo llenar el campo de apellido")
+            
+            # 4. FECHA DE NACIMIENTO (DÍA/MES/AÑO) - SELECTORES MEJORADOS
+            logger.info(f"🎯 Llenando fecha de nacimiento: {passenger_info['birth_day']}/{passenger_info['birth_month']}/{passenger_info['birth_year']}")
+            
+            # DÍA - SELECTORES MEJORADOS
+            day_filled = False
+            day_selectors = [
+                (By.XPATH, f"//button[contains(@id, 'dateDayId_{passenger_number}')]"),
+                (By.XPATH, "//button[contains(@id, 'dateDayId_')]"),
+                (By.XPATH, f"(//div[contains(text(), 'Día')]/following::button[1])[{passenger_number}]"),
+                (By.XPATH, "//div[contains(text(), 'Día')]/following::button[1]"),
+                (By.XPATH, f"//button[contains(@aria-label, 'Día')][{passenger_number}]"),
+            ]
+            
+            for selector in day_selectors:
+                try:
+                    day_button = self.wait.until(EC.element_to_be_clickable(selector))
+                    logger.info(f"✅ Botón de día encontrado: {selector}")
+                    day_button.click()
+                    time.sleep(1)
+                    
+                    # Seleccionar día - BUSCAR POR NÚMERO EXACTO
+                    day_option_selectors = [
+                        (By.XPATH, f"//div[text()='{passenger_info['birth_day']}']"),
+                        (By.XPATH, f"//div[contains(text(), '{passenger_info['birth_day']}')]"),
+                        (By.XPATH, f"//*[text()='{passenger_info['birth_day']}']"),
+                    ]
+                    
+                    for option_selector in day_option_selectors:
+                        try:
+                            day_option = self.wait.until(EC.element_to_be_clickable(option_selector))
+                            day_option.click()
+                            day_filled = True
+                            logger.info(f"✅ Día seleccionado: {passenger_info['birth_day']}")
+                            break
+                        except:
+                            continue
+                    
+                    if day_filled:
+                        break
+                except Exception as e:
+                    logger.debug(f"❌ Selector de día falló: {selector} - {e}")
+                    continue
+            
+            # MES - SELECTORES MEJORADOS
+            month_filled = False
+            month_selectors = [
+                (By.XPATH, f"//button[contains(@id, 'dateMonthId_{passenger_number}')]"),
+                (By.XPATH, "//button[contains(@id, 'dateMonthId_')]"),
+                (By.XPATH, f"(//div[contains(text(), 'Mes')]/following::button[1])[{passenger_number}]"),
+                (By.XPATH, "//div[contains(text(), 'Mes')]/following::button[1]"),
+            ]
+            
+            for selector in month_selectors:
+                try:
+                    month_button = self.wait.until(EC.element_to_be_clickable(selector))
+                    logger.info(f"✅ Botón de mes encontrado: {selector}")
+                    month_button.click()
+                    time.sleep(1)
+                    
+                    # Seleccionar mes - BUSCAR POR NÚMERO EXACTO
+                    month_option_selectors = [
+                        (By.XPATH, f"//div[text()='{passenger_info['birth_month']}']"),
+                        (By.XPATH, f"//div[contains(text(), '{passenger_info['birth_month']}')]"),
+                        (By.XPATH, f"//*[text()='{passenger_info['birth_month']}']"),
+                    ]
+                    
+                    for option_selector in month_option_selectors:
+                        try:
+                            month_option = self.wait.until(EC.element_to_be_clickable(option_selector))
+                            month_option.click()
+                            month_filled = True
+                            logger.info(f"✅ Mes seleccionado: {passenger_info['birth_month']}")
+                            break
+                        except:
+                            continue
+                    
+                    if month_filled:
+                        break
+                except Exception as e:
+                    logger.debug(f"❌ Selector de mes falló: {selector} - {e}")
+                    continue
+            
+            # AÑO - SELECTORES MEJORADOS
+            year_filled = False
+            year_selectors = [
+                (By.XPATH, f"//button[contains(@id, 'dateYearId_{passenger_number}')]"),
+                (By.XPATH, "//button[contains(@id, 'dateYearId_')]"),
+                (By.XPATH, f"(//div[contains(text(), 'Año')]/following::button[1])[{passenger_number}]"),
+                (By.XPATH, "//div[contains(text(), 'Año')]/following::button[1]"),
+            ]
+            
+            for selector in year_selectors:
+                try:
+                    year_button = self.wait.until(EC.element_to_be_clickable(selector))
+                    logger.info(f"✅ Botón de año encontrado: {selector}")
+                    year_button.click()
+                    time.sleep(1)
+                    
+                    # Seleccionar año - BUSCAR POR AÑO EXACTO
+                    year_option_selectors = [
+                        (By.XPATH, f"//div[text()='{passenger_info['birth_year']}']"),
+                        (By.XPATH, f"//div[contains(text(), '{passenger_info['birth_year']}')]"),
+                        (By.XPATH, f"//*[text()='{passenger_info['birth_year']}']"),
+                    ]
+                    
+                    for option_selector in year_option_selectors:
+                        try:
+                            year_option = self.wait.until(EC.element_to_be_clickable(option_selector))
+                            year_option.click()
+                            year_filled = True
+                            logger.info(f"✅ Año seleccionado: {passenger_info['birth_year']}")
+                            break
+                        except:
+                            continue
+                    
+                    if year_filled:
+                        break
+                except Exception as e:
+                    logger.debug(f"❌ Selector de año falló: {selector} - {e}")
+                    continue
+            
+            if day_filled and month_filled and year_filled:
+                logger.info("✅ Fecha de nacimiento completa llenada")
+            else:
+                logger.warning(f"⚠️  Fecha de nacimiento incompleta - Día: {day_filled}, Mes: {month_filled}, Año: {year_filled}")
+            
+            # 5. NACIONALIDAD - SELECTORES MEJORADOS
+            logger.info("🎯 Seleccionando nacionalidad: Colombia")
+            nationality_selectors = [
+                (By.XPATH, f"//button[contains(@id, 'IdDocNationality_{passenger_number}')]"),
+                (By.XPATH, "//button[contains(@id, 'IdDocNationality_')]"),
+                (By.XPATH, f"(//div[contains(text(), 'Nacionalidad')]/following::button[1])[{passenger_number}]"),
+                (By.XPATH, "//div[contains(text(), 'Nacionalidad')]/following::button[1]"),
+                (By.XPATH, f"//button[contains(@aria-label, 'Nacionalidad')][{passenger_number}]"),
+            ]
+            
+            nationality_filled = False
+            for selector in nationality_selectors:
+                try:
+                    nationality_button = self.wait.until(EC.element_to_be_clickable(selector))
+                    logger.info(f"✅ Botón de nacionalidad encontrado: {selector}")
+                    nationality_button.click()
+                    time.sleep(1)
+                    
+                    # Buscar y seleccionar Colombia - MÁS OPCIONES
+                    colombia_option_selectors = [
+                        (By.XPATH, "//div[text()='Colombia']"),
+                        (By.XPATH, "//div[contains(text(), 'Colombia')]"),
+                        (By.XPATH, "//*[text()='Colombia']"),
+                        (By.XPATH, "//div[contains(text(), 'CO - Colombia')]"),
+                    ]
+                    
+                    for option_selector in colombia_option_selectors:
+                        try:
+                            colombia_option = self.wait.until(EC.element_to_be_clickable(option_selector))
+                            colombia_option.click()
+                            nationality_filled = True
+                            logger.info("✅ Nacionalidad seleccionada: Colombia")
+                            break
+                        except:
+                            continue
+                    
+                    if nationality_filled:
+                        break
+                except Exception as e:
+                    logger.debug(f"❌ Selector de nacionalidad falló: {selector} - {e}")
+                    continue
+            
+            if not nationality_filled:
+                logger.warning("⚠️  No se pudo seleccionar la nacionalidad")
+            
+            # 6. PROGRAMA DE VIAJERO FRECUENTE - INTENTAR SI EXISTE
+            logger.info("🎯 Verificando programa de viajero frecuente...")
+            frequent_flyer_filled = False
+            frequent_flyer_selectors = [
+                (By.XPATH, f"//button[contains(@id, 'frequentFlyer_{passenger_number}')]"),
+                (By.XPATH, "//button[contains(@id, 'frequentFlyer')]"),
+                (By.XPATH, "//div[contains(text(), 'Viajero frecuente')]/following::button[1]"),
+            ]
+            
+            for selector in frequent_flyer_selectors:
+                try:
+                    frequent_flyer_button = self.wait.until(EC.element_to_be_clickable(selector))
+                    logger.info("✅ Campo de viajero frecuente encontrado, seleccionando 'No Aplica'")
+                    frequent_flyer_button.click()
+                    time.sleep(1)
+                    
+                    # Buscar opción "No Aplica"
+                    no_aplica_selectors = [
+                        (By.XPATH, "//div[contains(text(), 'No Aplica')]"),
+                        (By.XPATH, "//div[contains(text(), 'No aplica')]"),
+                        (By.XPATH, "//*[contains(text(), 'No Aplica')]"),
+                    ]
+                    
+                    for option_selector in no_aplica_selectors:
+                        try:
+                            no_aplica_option = self.wait.until(EC.element_to_be_clickable(option_selector))
+                            no_aplica_option.click()
+                            frequent_flyer_filled = True
+                            logger.info("✅ Programa de viajero frecuente: No Aplica")
+                            break
+                        except:
+                            continue
+                    
+                    if frequent_flyer_filled:
+                        break
+                except:
+                    # Si no encuentra el campo, es normal - continuar
+                    break
+            
+            if not frequent_flyer_filled:
+                logger.info("✅ Programa de viajero frecuente: No Aplica (por defecto o no disponible)")
+            
+            # Resumen de campos llenados
+            filled_fields = sum([gender_filled, first_name_filled, last_name_filled, 
+                            day_filled, month_filled, year_filled, nationality_filled])
+            
+            logger.info(f"✅✅✅ CAMPOS LLENADOS PARA {passenger_type} {passenger_number}: {filled_fields}/7 campos")
+            logger.info(f"  - Género: {'✅' if gender_filled else '❌'}")
+            logger.info(f"  - Nombre: {'✅' if first_name_filled else '❌'}")
+            logger.info(f"  - Apellido: {'✅' if last_name_filled else '❌'}")
+            logger.info(f"  - Fecha Nacimiento: {'✅' if (day_filled and month_filled and year_filled) else '❌'}")
+            logger.info(f"  - Nacionalidad: {'✅' if nationality_filled else '❌'}")
+            
+            # Tomar screenshot después de llenar este pasajero
+            self.take_screenshot(f"pasajero_{passenger_number}_completado.png")
+            
+            return filled_fields >= 4  # Considerar éxito si al menos 4 campos se llenaron
+            
+        except Exception as e:
+            logger.error(f"❌ Error llenando información del {passenger_type}: {e}")
+            self.take_screenshot(f"error_pasajero_{passenger_number}.png")
+            return False
+
+    def fill_all_passengers_information(self):
+        """Llenar información para todos los pasajeros con los campos específicos"""
+        logger.info("👥 Llenando información específica para todos los pasajeros")
+        
+        try:
+            total_passengers = 4  # 1 Adulto, 1 Joven, 1 Niño, 1 Infante
+            successful_passengers = 0
+            
+            # Adulto
+            if self.fill_passenger_information("Adulto", 1):
+                successful_passengers += 1
+                logger.info("✅ Información del Adulto llenada")
+            
+            time.sleep(1)
+            
+            # Joven
+            if self.fill_passenger_information("Joven", 2):
+                successful_passengers += 1
+                logger.info("✅ Información del Joven llenada")
+            
+            time.sleep(1)
+            
+            # Niño
+            if self.fill_passenger_information("Niño", 3):
+                successful_passengers += 1
+                logger.info("✅ Información del Niño llenada")
+            
+            time.sleep(1)
+            
+            # Infante
+            if self.fill_passenger_information("Infante", 4):
+                successful_passengers += 1
+                logger.info("✅ Información del Infante llenada")
+            
+            # Tomar screenshot de la información llenada
+            self.take_screenshot("pasajeros_informacion_completa.png")
+            
+            logger.info(f"✅✅✅ INFORMACIÓN COMPLETADA: {successful_passengers}/{total_passengers} pasajeros")
+            return successful_passengers > 0
+            
+        except Exception as e:
+            logger.error(f"❌ Error llenando información de pasajeros: {e}")
+            return False
+        
+    def scroll_to_passenger_section(self):
+        """Hacer scroll a la sección de pasajeros"""
+        logger.info("🔄 Haciendo scroll a la sección de pasajeros...")
+        
+        try:
+            # Buscar la sección de pasajeros y hacer scroll
+            passenger_sections = [
+                (By.XPATH, "//div[contains(text(), 'Género')]"),
+                (By.XPATH, "//div[contains(text(), 'Nombre')]"),
+                (By.XPATH, "//input[contains(@id, 'IdFirstName')]"),
+            ]
+            
+            for selector in passenger_sections:
+                try:
+                    element = self.wait.until(EC.presence_of_element_located(selector))
+                    self.driver.execute_script("arguments[0].scrollIntoView({block: 'center', behavior: 'smooth'});", element)
+                    time.sleep(1)
+                    logger.info("✅ Scroll a sección de pasajeros realizado")
+                    return True
+                except:
+                    continue
+            
+            # Si no encuentra elementos específicos, hacer scroll general
+            self.driver.execute_script("window.scrollTo(0, 400);")
+            time.sleep(1)
+            return True
+            
+        except Exception as e:
+            logger.error(f"❌ Error haciendo scroll: {e}")
+            return False
+
+    def scroll_to_next_passenger(self, current_passenger_number):
+        """Hacer scroll específico al siguiente pasajero"""
+        logger.info(f"🔄 Haciendo scroll al pasajero {current_passenger_number + 1}")
+        
+        try:
+            # Buscar el contenedor del siguiente pasajero
+            next_passenger_selectors = [
+                (By.XPATH, f"//div[contains(@class, 'passenger')][{current_passenger_number + 1}]"),
+                (By.XPATH, f"//div[contains(@id, 'passenger')][{current_passenger_number + 1}]"),
+                (By.XPATH, f"(//div[contains(@class, 'form-section')])[{current_passenger_number + 1}]"),
+            ]
+            
+            for selector in next_passenger_selectors:
+                try:
+                    next_passenger_section = self.wait.until(EC.presence_of_element_located(selector))
+                    self.driver.execute_script("arguments[0].scrollIntoView({block: 'center', behavior: 'smooth'});", next_passenger_section)
+                    time.sleep(1)
+                    logger.info(f"✅ Scroll al pasajero {current_passenger_number + 1} completado")
+                    return True
+                except:
+                    continue
+            
+            # Si no encuentra elementos específicos, hacer scroll incremental
+            scroll_amount = 300 + (current_passenger_number * 200)
+            self.driver.execute_script(f"window.scrollBy(0, {scroll_amount});")
+            time.sleep(1)
+            logger.info(f"✅ Scroll incremental realizado para pasajero {current_passenger_number + 1}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"❌ Error haciendo scroll al pasajero {current_passenger_number + 1}: {e}")
+            return False
+        
+    def wait_for_passenger_section_ready(self, passenger_number):
+        """Esperar a que la sección del pasajero esté lista"""
+        logger.info(f"⏳ Esperando que se cargue la sección del pasajero {passenger_number}")
+        
+        try:
+            # Esperar a que los campos estén interactivos
+            WebDriverWait(self.driver, 5).until(
+                lambda driver: driver.execute_script("return document.readyState") == "complete"
+            )
+            
+            # Buscar indicadores de que la sección está lista
+            ready_indicators = [
+                (By.XPATH, f"//input[contains(@id, 'IdFirstName_{passenger_number}')]"),
+                (By.XPATH, f"//input[contains(@id, 'IdFirstName')]"),
+                (By.XPATH, "//div[contains(text(), 'Género')]"),
+            ]
+            
+            for indicator in ready_indicators:
+                if self.is_element_present(indicator, timeout=3):
+                    logger.info(f"✅ Sección del pasajero {passenger_number} lista")
+                    return True
+            
+            time.sleep(2)  # Espera de fallback
+            return True
+            
+        except Exception as e:
+            logger.warning(f"⚠️  Espera para pasajero {passenger_number} falló: {e}")
+            return True  # Continuar de todos modos
+
+    def debug_passenger_fields(self, passenger_number=1):
+        """Método de diagnóstico para ver TODOS los campos disponibles del pasajero"""
+        logger.info(f"🔍 DIAGNÓSTICO COMPLETO: Buscando TODOS los campos del pasajero {passenger_number}")
+        
+        try:
+            # Tomar screenshot del estado actual
+            self.take_screenshot(f"debug_pasajero_{passenger_number}_antes.png")
+            
+            # Buscar TODOS los elementos interactivos en la sección de pasajeros
+            all_elements = self.driver.find_elements(By.XPATH, "//div[contains(@class, 'passenger')]//*")
+            
+            logger.info(f"🔍 Elementos encontrados en sección pasajero: {len(all_elements)}")
+            
+            # Categorizar elementos
+            buttons = []
+            inputs = []
+            dropdowns = []
+            labels = []
+            
+            for element in all_elements:
+                try:
+                    tag_name = element.tag_name.lower()
+                    element_type = element.get_attribute('type')
+                    element_id = element.get_attribute('id') or ''
+                    element_class = element.get_attribute('class') or ''
+                    element_text = element.text.strip() if element.text else ''
+                    placeholder = element.get_attribute('placeholder') or ''
+                    
+                    element_info = {
+                        'tag': tag_name,
+                        'type': element_type,
+                        'id': element_id,
+                        'class': element_class,
+                        'text': element_text,
+                        'placeholder': placeholder,
+                        'visible': element.is_displayed(),
+                        'enabled': element.is_enabled()
+                    }
+                    
+                    if tag_name == 'button':
+                        buttons.append(element_info)
+                    elif tag_name == 'input':
+                        inputs.append(element_info)
+                    elif 'dropdown' in element_class or 'select' in element_class:
+                        dropdowns.append(element_info)
+                    elif tag_name in ['div', 'span', 'label'] and element_text:
+                        labels.append(element_info)
+                        
+                except Exception as e:
+                    continue
+            
+            # Log de resultados
+            logger.info("🎯 BOTONES encontrados:")
+            for btn in buttons[:10]:  # Mostrar primeros 10
+                logger.info(f"  - '{btn['text']}' | ID: {btn['id']} | Clase: {btn['class']} | Visible: {btn['visible']}")
+            
+            logger.info("🎯 INPUTS encontrados:")
+            for inp in inputs[:10]:
+                logger.info(f"  - Tipo: {inp['type']} | ID: {inp['id']} | Placeholder: {inp['placeholder']} | Visible: {inp['visible']}")
+            
+            logger.info("🎯 DROPDOWNS encontrados:")
+            for dd in dropdowns[:10]:
+                logger.info(f"  - '{dd['text']}' | ID: {dd['id']} | Clase: {dd['class']}")
+            
+            logger.info("🎯 LABELS/Textos encontrados:")
+            for label in labels[:15]:
+                if any(keyword in label['text'].lower() for keyword in ['género', 'nombre', 'apellido', 'fecha', 'nacimiento', 'día', 'mes', 'año', 'nacionalidad', 'documento', 'viajero']):
+                    logger.info(f"  - '{label['text']}'")
+            
+            return {
+                'buttons': buttons,
+                'inputs': inputs,
+                'dropdowns': dropdowns,
+                'labels': labels
+            }
+            
+        except Exception as e:
+            logger.error(f"❌ Error en diagnóstico: {e}")
+            return {}
 
     # ===== MÉTODOS GENERALES =====
     
